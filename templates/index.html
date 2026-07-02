@@ -1,112 +1,419 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>LINGUA-ANALYTICA V2.1</title>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-</head>
-<body style="background:#0b1326;color:#dae2fd;font-family:Arial,sans-serif;margin:0;">
-    <main style="padding:32px;max-width:1200px;margin:auto;">
-        <h1>LINGUA-ANALYTICA V2.1</h1>
-        <p>Comparador real entre Stanford CoreNLP y Linguakit Local CLI.</p>
-        <p>
-            <a href="/metodologia" style="color:#adc6ff;">Ver metodología académica, pesos y referencias</a>
-        </p>
-
-        <form
-            id="analisis-form"
-            hx-post="/analizar"
-            hx-target="#resultado"
-            hx-swap="innerHTML"
-            style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;"
-        >
-            <label>Oración de entrada</label>
-
-            <input
-                name="texto"
-                value="El estudiante analizó la oración correctamente."
-                style="width:100%;padding:12px;margin:10px 0;background:#060e20;color:#dae2fd;border:1px solid #424754;"
-            >
-
-            <label>Tipo de análisis</label>
-
-            <select
-                name="tipo"
-                style="width:100%;padding:12px;margin:10px 0;background:#060e20;color:#dae2fd;border:1px solid #424754;"
-            >
-                <option value="formal">Formal</option>
-                <option value="informal">Informal</option>
-                <option value="ambiguo">Ambiguo</option>
-                <option value="largo">Largo</option>
-            </select>
-
-            <button
-                type="submit"
-                style="padding:12px 20px;background:#adc6ff;color:#002e6a;border:0;font-weight:bold;"
-            >
-                Analizar
-            </button>
-        </form>
-
-        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
-            <h2 style="margin-top:0;color:#adc6ff;">Casos de prueba</h2>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button type="button" data-texto="El estudiante analizó la oración correctamente." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración simple</button>
-                <button type="button" data-texto="El estudiante analizó la oración y explicó sus dependencias al profesor." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración compuesta</button>
-                <button type="button" data-texto="El informe técnico describe la arquitectura del sistema y documenta los criterios de evaluación." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto formal</button>
-                <button type="button" data-texto="El analizador procesa una entrada extensa con varios modificadores, complementos preposicionales y relaciones sintácticas que deben compararse entre herramientas." data-tipo="largo" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto largo</button>
-                <button type="button" data-texto="Vi al hombre con el telescopio." data-tipo="ambiguo" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración ambigua</button>
-                <button type="button" data-texto="el perro esta cagando siempre lanza stanford?" data-tipo="informal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto informal</button>
-                <button type="button" data-texto="" data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Entrada vacía</button>
-            </div>
-        </section>
-
-        <section id="resultado">
-            <div style="background:#0f172a;border:1px solid #424754;padding:20px;">
-                Ingrese una oración y presione analizar.
-            </div>
-        </section>
-    </main>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lingua-Analytica: Comparador en tiempo real entre Stanford CoreNLP y Linguakit para análisis sintáctico del español.">
+    <title>Panel de Análisis PNL — LINGUA-ANALYTICA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        function usarCaso(button) {
-            const form = document.getElementById("analisis-form");
-            form.elements.texto.value = button.dataset.texto;
-            form.elements.tipo.value = button.dataset.tipo;
-            form.requestSubmit();
-        }
-
-        function descargarArchivo(nombre, contenido, tipo) {
-            const blob = new Blob([contenido], { type: tipo });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = nombre;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-        }
-
-        async function exportarJson() {
-            const form = document.getElementById("analisis-form");
-            const response = await fetch("/api/analizar", {
-                method: "POST",
-                body: new URLSearchParams(new FormData(form)),
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            });
-            const json = await response.text();
-            descargarArchivo("analisis-lingua-analytica.json", json, "application/json");
-        }
-
-        function exportarMarkdown() {
-            const reporte = document.getElementById("reporte-markdown");
-
-            if (!reporte) {
-                return;
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#3b6ff5',
+                            hoverBlue: '#2557d6',
+                            deepBlue: '#0f1c3f',
+                            bg: '#0b1326',
+                            card: '#161f30',
+                            deep: '#060e20',
+                            border: '#2a3547',
+                            text: '#f8fafc',
+                            muted: '#94a3b8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.25s ease-out both',
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
+                        'spin-slow': 'spin 1s linear infinite'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
             }
-
-            descargarArchivo("analisis-lingua-analytica.md", reporte.value, "text/markdown");
         }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.29.2/cytoscape.min.js"></script>
+    <style>
+        body {
+            background-color: #0b1326;
+            color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Tema Claro */
+        html.light body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        :root {
+            --bg-gradient: radial-gradient(ellipse at top, #0f1c3f 0%, #0b1326 60%, #060e20 100%);
+            --card-bg: #161f30;
+            --border-color: #2a3547;
+            --input-bg: #0d1527;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        html.light {
+            --bg-gradient: radial-gradient(ellipse at top, #e2e8f0 0%, #f1f5f9 60%, #cbd5e1 100%);
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        .main-container {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+
+        .dashboard-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        html.light .dashboard-card {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #3b6ff5;
+            box-shadow: 0 0 0 2px rgba(59, 111, 245, 0.2);
+        }
+
+        @keyframes fill-bar {
+            from { width: 0%; }
+        }
+
+        .animate-fill-bar {
+            animation: fill-bar 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .case-pill {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .case-pill:hover, .case-pill.active {
+            border-color: #3b6ff5;
+            color: #3b6ff5;
+            background-color: rgba(59, 111, 245, 0.05);
+        }
+
+        /* HTMX Indicator */
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: flex; }
+        .htmx-request #btn-label { display: none; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    </style>
+</head>
+<body class="font-sans antialiased text-slate-200 min-h-screen">
+
+<div class="flex main-container">
+    
+    <!-- ── Sidebar (Desktop) ── -->
+    <aside class="hidden lg:flex w-64 flex-col bg-brand-deep/80 backdrop-blur-md border-r border-brand-border/40 h-screen sticky top-0 z-40 justify-between">
+        <div class="p-6">
+            <!-- Logo / Brand -->
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-8 h-8 rounded-lg bg-brand-blue flex items-center justify-center text-white font-bold shadow-md shadow-brand-blue/20">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold tracking-tight text-white">LINGUA-ANALYTICA</h1>
+                    <span class="text-[10px] text-brand-muted font-mono uppercase tracking-wider">Comparador PNL</span>
+                </div>
+            </div>
+
+            <!-- Menú -->
+            <nav class="space-y-1">
+                <a href="/" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium bg-brand-blue/15 text-brand-blue border border-brand-blue/20 transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/>
+                    </svg>
+                    Panel de Resultados
+                </a>
+                <a href="/metodologia" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Metodología
+                </a>
+                <button onclick="toggleTheme()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent transition-all text-left">
+                    <svg id="sidebar-icon-moon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                    <svg id="sidebar-icon-sun" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+                    </svg>
+                    Cambiar Tema
+                </button>
+            </nav>
+        </div>
+        <div class="p-6 border-t border-brand-border/40">
+            <span class="text-xs text-brand-muted block">Herramienta Académica v2.1</span>
+        </div>
+    </aside>
+
+    <!-- ── Main Content Area ── -->
+    <div class="flex-1 flex flex-col min-w-0">
+        
+        <!-- Header / Navbar (Mobile) -->
+        <header class="lg:hidden h-14 flex items-center justify-between px-4 bg-brand-deep/80 backdrop-blur-md border-b border-brand-border/40 sticky top-0 z-40">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded bg-brand-blue flex items-center justify-center text-white font-bold text-xs">LA</div>
+                <h1 class="text-sm font-bold text-white tracking-tight">LINGUA-ANALYTICA</h1>
+            </div>
+            <button onclick="toggleTheme()" class="w-8 h-8 rounded-full border border-brand-border/60 flex items-center justify-center text-slate-400">
+                <svg id="mob-icon-moon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+                <svg id="mob-icon-sun" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Main Body Scrollable -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+            <!-- Title Section -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Panel de Análisis PNL</h2>
+                    <p class="text-xs sm:text-sm text-brand-muted mt-1 leading-relaxed">
+                        Comparación de analizadores sintácticos de español entre <span class="text-brand-blue font-medium">Stanford CoreNLP</span> y <span class="text-cyan-400 font-medium">Linguakit</span>.
+                    </p>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    Motores Activos
+                </div>
+            </div>
+
+            <!-- Dashboard Content Grid -->
+            <div class="grid grid-cols-1 gap-6">
+
+                <!-- ── Input & Test Cases Card ── -->
+                <div class="dashboard-card p-5 space-y-5 animate-slide-up">
+                    <form id="analisis-form"
+                          hx-post="/analizar"
+                          hx-target="#resultado"
+                          hx-swap="innerHTML"
+                          hx-indicator="#loading-bar"
+                          class="space-y-4">
+                        
+                        <!-- Search Bar input style (Chat prompt style) -->
+                        <div>
+                            <div class="relative flex items-center rounded-xl overflow-hidden custom-input px-4 py-3 bg-brand-deep/30 focus-within:border-brand-blue/60 transition-all duration-300">
+                                <input name="texto" id="texto-input"
+                                       value="El estudiante analizó la oración correctamente."
+                                       placeholder="Introduce una oración para analizar..."
+                                       class="bg-transparent flex-1 text-sm outline-none border-none pr-16 text-slate-100 placeholder-slate-500">
+                                <span class="hidden sm:inline-block text-[9px] font-bold text-slate-500 px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800/40 select-none mr-8">Ctrl + ↵</span>
+                                <button type="submit" class="absolute right-3 p-1.5 rounded-lg text-brand-blue hover:bg-brand-blue/10 transition-colors">
+                                    <svg class="w-4 h-4 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Selector and Trigger -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="w-full sm:w-72">
+                                <label class="block text-[10px] font-bold text-brand-muted mb-1.5 tracking-wider uppercase">Tipo de Análisis</label>
+                                <select name="tipo" id="tipo-select" class="custom-input w-full px-3 py-2 rounded-lg text-sm cursor-pointer outline-none">
+                                    <option value="formal">Formal</option>
+                                    <option value="informal">Informal</option>
+                                    <option value="ambiguo">Ambiguo</option>
+                                    <option value="largo">Largo</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="w-full sm:w-auto bg-brand-blue hover:bg-brand-hoverBlue text-white font-semibold px-6 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors">
+                                <span id="btn-label" class="flex items-center gap-2">
+                                    Analizar
+                                </span>
+                                <span class="htmx-indicator items-center gap-2 text-xs">
+                                    <svg class="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                    Analizando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Test Cases Pills -->
+                    <div class="space-y-2 pt-2 border-t border-brand-border/40">
+                        <span class="block text-[10px] font-bold text-brand-muted tracking-wider uppercase">Casos de Prueba</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium active" type="button" data-texto="El estudiante analizó la oración correctamente." data-tipo="formal" onclick="usarCaso(this)">Simple</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="El estudiante analizó la oración y explicó sus dependencias al profesor." data-tipo="formal" onclick="usarCaso(this)">Complejo</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="El informe técnico describe la arquitectura del sistema y documenta los criterios de evaluación." data-tipo="formal" onclick="usarCaso(this)">Formal</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="El analizador procesa una entrada extensa con varios modificadores, complementos preposicionales y relaciones sintácticas que deben compararse entre herramientas." data-tipo="largo" onclick="usarCaso(this)">Largo</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="Vi al hombre con el telescopio." data-tipo="ambiguo" onclick="usarCaso(this)">Ambiguo</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="el perro esta cagando siempre lanza stanford?" data-tipo="informal" onclick="usarCaso(this)">Informal</button>
+                            <button class="case-pill px-3 py-1.5 rounded-lg text-xs font-medium" type="button" data-texto="" data-tipo="formal" onclick="usarCaso(this)">Personalizado (Vacío)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Loading Indicator ── -->
+                <div id="loading-bar" class="htmx-indicator flex-col items-center gap-3 py-12">
+                    <div class="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin-slow"
+                         style="border-color:var(--border-color); border-top-color:#3b6ff5;"></div>
+                    <p class="text-xs text-brand-muted">Comparando dependencias sintácticas...</p>
+                </div>
+
+                <!-- ── Results Render Section ── -->
+                <section id="resultado" class="space-y-6">
+                    <div class="dashboard-card p-10 flex flex-col items-center justify-center text-center gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-brand-deep border border-brand-border/40">
+                            <svg class="w-6 h-6 text-brand-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-white">Panel listo para recibir oraciones</p>
+                            <p class="text-xs text-brand-muted mt-1">Introduce una oración arriba o haz clic en un caso de prueba para iniciar la comparación.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-brand-border/20 py-4 px-6 text-center lg:text-left flex flex-col lg:flex-row items-center justify-between gap-2 text-[10px] text-brand-muted">
+            <span>LINGUA-ANALYTICA V2.1 — Stanford CoreNLP &amp; Linguakit</span>
+            <span class="font-mono">Diseño de Compiladores · Universidad</span>
+        </footer>
+    </div>
+</div>
+
+<!-- Bottom Navigation Bar (Mobile only) -->
+<div class="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-brand-deep/95 backdrop-blur-md border-t border-brand-border/50 z-50 flex items-center justify-around">
+    <a href="/" class="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-brand-blue">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/>
+        </svg>
+        Analizar
+    </a>
+    <a href="/metodologia" class="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Metodología
+    </a>
+</div>
+
+<script>
+    /* ── Theme Management ── */
+    function applyTheme(t) {
+        document.documentElement.classList.toggle('dark', t === 'dark');
+        document.documentElement.classList.toggle('light', t === 'light');
+        
+        const moonIcons = [document.getElementById('sidebar-icon-moon'), document.getElementById('mob-icon-moon')];
+        const sunIcons = [document.getElementById('sidebar-icon-sun'), document.getElementById('mob-icon-sun')];
+        
+        moonIcons.forEach(i => { if (i) i.classList.toggle('hidden', t === 'light'); });
+        sunIcons.forEach(i => { if (i) i.classList.toggle('hidden', t === 'dark'); });
+        
+        localStorage.setItem('la-theme', t);
+    }
+
+    function toggleTheme() {
+        const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+    }
+
+    applyTheme(localStorage.getItem('la-theme') || 'dark');
+
+    /* ── Keyboard Shortcut listener ── */
+    document.getElementById('texto-input').addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('analisis-form').requestSubmit();
+        }
+    });
+
+    /* ── Case pills ── */
+    function usarCaso(btn) {
+        const form = document.getElementById('analisis-form');
+        form.elements.texto.value = btn.dataset.texto;
+        form.elements.tipo.value  = btn.dataset.tipo;
+        document.querySelectorAll('.case-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        form.requestSubmit();
+    }
+
+    /* ── Scroll to results ── */
+    document.body.addEventListener('htmx:afterSwap', e => {
+        if (e.target.id === 'resultado') {
+            setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        }
+    });
+
+    /* ── Export helpers ── */
+    function descargarArchivo(nombre, contenido, tipo) {
+        const blob = new Blob([contenido], { type: tipo });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), { href: url, download: nombre });
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    async function exportarJson() {
+        const form = document.getElementById('analisis-form');
+        const res  = await fetch('/api/analizar', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form)),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        descargarArchivo('analisis-lingua-analytica.json', await res.text(), 'application/json');
+    }
+    function exportarMarkdown() {
+        const r = document.getElementById('reporte-markdown');
+        if (r) descargarArchivo('analisis-lingua-analytica.md', r.value, 'text/markdown');
+    }
+</script>
 </body>
 </html>

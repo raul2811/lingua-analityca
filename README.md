@@ -19,6 +19,22 @@ Prototipo académico desarrollado para el curso **Diseño de Compiladores (INF51
 
 ---
 
+## 🖥️ Interfaz de Usuario (UI/UX)
+
+La plataforma cuenta con un diseño premium y responsivo al estilo Apple (tanto para escritorio, tablets como móviles), incluyendo visualizaciones de dependencias dinámicas con **Cytoscape.js** y micro-animaciones fluidas de carga:
+
+<div align="center">
+  <h3>Vista del Dashboard de Resultados</h3>
+  <img src="static/dashboard_results.png" width="900" alt="Dashboard de Lingua-Analytica con Cytoscape.js" />
+  
+  <br/><br/>
+  
+  <h3>Vista de la Metodología Académica</h3>
+  <img src="static/methodology.png" width="900" alt="Vista de Metodología Académica y Matriz de Pesos" />
+</div>
+
+---
+
 ## 📝 Descripción del Proyecto
 
 **LINGUA-ANALYTICA V2.1** es una plataforma de evaluación comparativa que analiza y contrasta en tiempo real el rendimiento, precisión y estructura de dos motores de procesamiento de lenguaje natural (NLP) usados en entornos académicos:
