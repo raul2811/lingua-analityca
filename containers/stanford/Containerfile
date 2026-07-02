@@ -1,0 +1,40 @@
+FROM docker.io/library/eclipse-temurin:17-jre-alpine AS downloader
+
+ARG CORENLP_VERSION=4.5.10
+
+WORKDIR /tmp
+
+RUN apk add --no-cache curl unzip \
+    && curl -fSL -o "stanford-corenlp-${CORENLP_VERSION}.zip" "https://nlp.stanford.edu/software/stanford-corenlp-${CORENLP_VERSION}.zip" \
+    && unzip -q "stanford-corenlp-${CORENLP_VERSION}.zip" \
+    && cd "stanford-corenlp-${CORENLP_VERSION}" \
+    && curl -fSL -O "https://nlp.stanford.edu/software/stanford-corenlp-${CORENLP_VERSION}-models-spanish.jar" \
+    && unzip -p "stanford-corenlp-${CORENLP_VERSION}-models-spanish.jar" StanfordCoreNLP-spanish.properties > StanfordCoreNLP-spanish.properties
+
+FROM docker.io/library/eclipse-temurin:17-jre-alpine
+
+ARG REPOSITORY="local/lingua-analytica"
+ARG CORENLP_VERSION=4.5.10
+
+LABEL org.opencontainers.image.title="Stanford CoreNLP Spanish Server" \
+      org.opencontainers.image.description="Stanford CoreNLP HTTP server with Spanish models for Lingua Analytica" \
+      org.opencontainers.image.source="https://github.com/${REPOSITORY}" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later"
+
+RUN addgroup -S -g 10001 corenlp \
+    && adduser -S -D -H -u 10001 -G corenlp corenlp
+
+WORKDIR /opt/corenlp
+
+COPY --from=downloader --chown=10001:10001 /tmp/stanford-corenlp-${CORENLP_VERSION}/*.jar ./
+COPY --from=downloader --chown=10001:10001 /tmp/stanford-corenlp-${CORENLP_VERSION}/StanfordCoreNLP-spanish.properties ./
+COPY --from=downloader --chown=10001:10001 /tmp/stanford-corenlp-${CORENLP_VERSION}/sutime ./sutime
+
+ENV JAVA_XMX=4g \
+    CORENLP_TIMEOUT=15000 \
+    CORENLP_THREADS=2
+
+USER 10001:10001
+EXPOSE 9000
+
+ENTRYPOINT ["sh", "-c", "exec java -Xmx${JAVA_XMX} -cp '/opt/corenlp/*' edu.stanford.nlp.pipeline.StanfordCoreNLPServer -serverProperties StanfordCoreNLP-spanish.properties -port 9000 -timeout ${CORENLP_TIMEOUT} -threads ${CORENLP_THREADS}"]

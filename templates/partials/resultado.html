@@ -1,0 +1,91 @@
+<section style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <article style="background:#0f172a;border:1px solid #424754;padding:20px;">
+        <h2 style="color:#adc6ff;">Stanford CoreNLP</h2>
+        <p><strong>Estado:</strong> {{ r.stanford.estado }}</p>
+
+        <h3>Tokens / Lemas / POS</h3>
+        <pre style="background:#060e20;padding:12px;overflow:auto;">{% for item in r.stanford.tokens_pos %}{{ item }}
+{% endfor %}</pre>
+
+        <h3>Dependencias</h3>
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th>Relación</th>
+                    <th>Gobernador</th>
+                    <th>Dependiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in r.stanford.dependencias %}
+                <tr>
+                    <td>{{ d.relacion }}</td>
+                    <td>{{ d.gobernador }}</td>
+                    <td>{{ d.dependiente }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article style="background:#0f172a;border:1px solid #424754;padding:20px;">
+        <h2 style="color:#89ceff;">Linguakit Local CLI</h2>
+        <p><strong>Estado:</strong> {{ r.linguakit.estado }}</p>
+
+        <h3>Tokens / Lemas / Categorías</h3>
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Lema</th>
+                    <th>Categoría</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in r.linguakit.tokens %}
+                <tr>
+                    <td>{{ t.token }}</td>
+                    <td>{{ t.lema }}</td>
+                    <td>{{ t.categoria }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Dependencias</h3>
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th>Relación</th>
+                    <th>Gobernador</th>
+                    <th>Dependiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in r.linguakit.dependencias %}
+                <tr>
+                    <td>{{ d.relacion }}</td>
+                    <td>{{ d.gobernador }}</td>
+                    <td>{{ d.dependiente }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+</section>
+
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;">
+    <h2 style="color:#adc6ff;">Matriz de decisión automática</h2>
+
+    <p>
+        <strong>Recomendación:</strong>
+        <span style="color:#22c55e;">{{ r.decision.recomendacion }}</span>
+    </p>
+
+    <p>{{ r.decision.justificacion }}</p>
+
+    <p><strong>Stanford:</strong> {{ r.decision.puntos_stanford }} pts</p>
+    <p><strong>Linguakit:</strong> {{ r.decision.puntos_linguakit }} pts</p>
+</section>

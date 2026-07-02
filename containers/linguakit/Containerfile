@@ -1,0 +1,68 @@
+FROM docker.io/library/perl:5.40-slim AS deps
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates cpanminus gcc git libc6-dev make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cpanm --notest --local-lib-contained /opt/perl-local \
+        Dancer2 \
+        Data::Dump \
+        JSON \
+        HTTP::Request::Common \
+        LWP::UserAgent \
+        Plack \
+        YAML
+
+FROM deps AS source
+
+ARG LINGUAKIT_REPOSITORY=https://github.com/citiususc/Linguakit.git
+ARG LINGUAKIT_REF=master
+
+WORKDIR /src
+
+RUN git clone --depth 1 --branch "${LINGUAKIT_REF}" "${LINGUAKIT_REPOSITORY}" . \
+    && rm -rf .git
+
+RUN perl -0pi -e 's/use POSIX qw\(strftime\);/use POSIX qw(strftime);\nuse File::Basename qw(dirname);/' api/lib/linguakit_api.pm \
+    && perl -0pi -e "s/header 'Content-Type' => 'application\\/json';/response_header 'Content-Type' => 'application\\/json';/" api/lib/linguakit_api.pm \
+    && perl -0pi -e "s/header 'Access-Control-Allow-Origin' => '\\*';/response_header 'Access-Control-Allow-Origin' => '*';/" api/lib/linguakit_api.pm \
+    && cp api/lib/config.yml api/config.yml \
+    && rm -rf \
+        .git .gitignore .gitlab-sync docs t test api/t api/samples \
+        tagger/en tagger/gl tagger/histgz tagger/pt \
+        parsers/parserDefault-en.perl parsers/parserDefault-fr.perl \
+        parsers/parserDefault-gl.perl parsers/parserDefault-histgz.perl \
+        parsers/parserDefault-metaromance.perl parsers/parserDefault-pt.perl \
+        scripts/AdapterFreeling-en.perl scripts/AdapterFreeling-gl.perl \
+        scripts/AdapterFreeling-histgz.perl scripts/AdapterFreeling-pt.perl \
+        scripts/AdapterTreetagger-*.perl \
+        sentiment/en sentiment/gl sentiment/pt
+
+FROM docker.io/library/perl:5.40-slim
+
+ARG REPOSITORY="local/lingua-analytica"
+
+LABEL org.opencontainers.image.title="Linguakit API" \
+      org.opencontainers.image.description="Linguakit Spanish HTTP API packaged for Lingua Analytica" \
+      org.opencontainers.image.source="https://github.com/${REPOSITORY}" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later"
+
+RUN groupadd --system --gid 10001 linguakit \
+    && useradd --system --uid 10001 --gid 10001 --home-dir /nonexistent --shell /usr/sbin/nologin linguakit
+
+COPY --from=deps /opt/perl-local /opt/perl-local
+COPY --from=source --chown=10001:10001 /src /opt/linguakit
+
+ENV PATH="/opt/perl-local/bin:${PATH}" \
+    PERL5LIB="/opt/perl-local/lib/perl5:/opt/linguakit/lib" \
+    LINGUAKIT_LANG=es \
+    LINGUAKIT_PORT=3002
+
+WORKDIR /opt/linguakit/api
+
+USER 10001:10001
+EXPOSE 3002
+
+ENTRYPOINT ["sh", "-c", "exec perl lib/linguakit_api.pm -l ${LINGUAKIT_LANG} -p ${LINGUAKIT_PORT}"]

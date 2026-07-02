@@ -1,0 +1,47 @@
+FROM docker.io/library/rust:1.88-slim-bookworm AS builder
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY templates ./templates
+COPY static ./static
+
+RUN cargo build --release
+
+FROM docker.io/library/debian:bookworm-slim
+
+ARG REPOSITORY="local/lingua-analytica"
+
+LABEL org.opencontainers.image.title="Lingua Analytica" \
+      org.opencontainers.image.description="Rust Actix Web frontend and API orchestrator for Lingua Analytica" \
+      org.opencontainers.image.source="https://github.com/${REPOSITORY}" \
+      org.opencontainers.image.licenses="MIT"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid 10001 --home-dir /nonexistent --shell /usr/sbin/nologin app
+
+WORKDIR /app
+
+COPY --from=builder --chown=10001:10001 /app/target/release/lingua-analytica /usr/local/bin/lingua-analytica
+COPY --from=builder --chown=10001:10001 /app/templates ./templates
+COPY --from=builder --chown=10001:10001 /app/static ./static
+
+ENV APP_HOST=0.0.0.0 \
+    APP_PORT=8080 \
+    STANFORD_URL=http://stanford:9000 \
+    LINGUAKIT_URL=http://linguakit:3002 \
+    LINGUAKIT_MODE=dep \
+    LINGUAKIT_OUTPUT=-a
+
+USER 10001:10001
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/lingua-analytica"]

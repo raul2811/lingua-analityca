@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>LINGUA-ANALYTICA V2.1</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+</head>
+<body style="background:#0b1326;color:#dae2fd;font-family:Arial,sans-serif;margin:0;">
+    <main style="padding:32px;max-width:1200px;margin:auto;">
+        <h1>LINGUA-ANALYTICA V2.1</h1>
+        <p>Comparador real entre Stanford CoreNLP y Linguakit Local CLI.</p>
+
+        <form
+            hx-post="/analizar"
+            hx-target="#resultado"
+            hx-swap="innerHTML"
+            style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;"
+        >
+            <label>Oración de entrada</label>
+
+            <input
+                name="texto"
+                value="El estudiante analizó la oración correctamente."
+                style="width:100%;padding:12px;margin:10px 0;background:#060e20;color:#dae2fd;border:1px solid #424754;"
+            >
+
+            <label>Tipo de análisis</label>
+
+            <select
+                name="tipo"
+                style="width:100%;padding:12px;margin:10px 0;background:#060e20;color:#dae2fd;border:1px solid #424754;"
+            >
+                <option value="formal">Formal</option>
+                <option value="informal">Informal</option>
+                <option value="ambiguo">Ambiguo</option>
+                <option value="largo">Largo</option>
+            </select>
+
+            <button
+                type="submit"
+                style="padding:12px 20px;background:#adc6ff;color:#002e6a;border:0;font-weight:bold;"
+            >
+                Analizar
+            </button>
+        </form>
+
+        <section id="resultado">
+            <div style="background:#0f172a;border:1px solid #424754;padding:20px;">
+                Ingrese una oración y presione analizar.
+            </div>
+        </section>
+    </main>
+</body>
+</html>

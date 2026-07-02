@@ -1,0 +1,31 @@
+services:
+  stanford:
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/raul2811}/lingua-analytica-stanford:${IMAGE_TAG:-main}
+    environment:
+      JAVA_XMX: 4g
+      CORENLP_TIMEOUT: 15000
+      CORENLP_THREADS: 2
+    ports:
+      - "19000:9000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  linguakit:
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/raul2811}/lingua-analytica-linguakit:${IMAGE_TAG:-main}
+    environment:
+      LINGUAKIT_LANG: es
+      LINGUAKIT_PORT: 3002
+    ports:
+      - "3002:3002"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

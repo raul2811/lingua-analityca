@@ -91,49 +91,54 @@ El sistema utiliza una arquitectura desacoplada impulsada por **HTMX** para actu
 
 ## ⚙️ Requisitos Previos
 
-Para desplegar el prototipo localmente, asegúrate de contar con:
+Para desarrollar localmente:
 
-1. **Rust Toolchain** (v1.75+ recomendado)
-2. **Java JDK 8 o superior** (Requerido para ejecutar el servidor de Stanford CoreNLP)
-3. **API Key de Linguakit** a través de la plataforma [RapidAPI](https://rapidapi.com/).
+1. **Rust Toolchain**
+2. **Podman** y **podman-compose**
+
+No necesitas instalar Java, Stanford CoreNLP ni Linguakit en el host. Esas herramientas se consumen desde imagenes.
 
 ---
 
 ## 🛠️ Instalación y Despliegue
 
-### 1. Servidor Stanford CoreNLP
-
-Descarga el parser oficial e inicia el servidor en el puerto por defecto:
-
-```bash
-java -mx4g -cp "stanford-corenlp-4.x.x/*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000
-
-```
-
-### 2. Configuración del Entorno (.env)
+### 1. Configuración del Entorno (.env)
 
 Crea un archivo `.env` en la raíz del proyecto Rust:
 
-```env
-STANFORD_URL=http://localhost:9000
-LINGUAKIT_API_KEY=tu_api_key_aqui
-PORT=8080
-
+```bash
+cp .env.example .env
 ```
 
-### 3. Compilación y Ejecución del Proyecto
+### 2. Desarrollo local
+
+Levanta solo Stanford y Linguakit:
 
 ```bash
-# Clonar el repositorio
-git clone [https://github.com/tu-usuario/lingua-analytica.git](https://github.com/tu-usuario/lingua-analytica.git)
-cd lingua-analytica
-
-# Compilar en modo desarrollo y ejecutar
-cargo run
-
+podman-compose -f compose.tools.yaml up -d
 ```
 
-Accede a la aplicación navegando a `http://localhost:8080`.
+Ejecuta Rust en el host:
+
+```bash
+cargo run
+```
+
+Accede a `http://localhost:8080`.
+
+### 3. Despliegue completo con GHCR
+
+```bash
+GHCR_IMAGE_PREFIX=ghcr.io/raul2811 IMAGE_TAG=main podman-compose -f compose.prod.yaml up -d
+```
+
+### 4. Documentacion
+
+Consulta:
+
+- [Desarrollo local](documentacion/desarrollo-local.md)
+- [Despliegue GHCR](documentacion/despliegue-ghcr.md)
+- [Imagenes y contenedores](documentacion/imagenes-contenedores.md)
 
 ---
 
@@ -142,13 +147,3 @@ Accede a la aplicación navegando a `http://localhost:8080`.
 Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
 
 ---
-
----
-
-### Cambios clave aplicados:
-
-* **Estructura Limpia:** Uso de separadores visuales (`---`) y jerarquía lógica de encabezados (`##`, `###`).
-* **Tabla Comparativa:** Añadida una tabla de dimensiones analíticas para vender la idea del proyecto de inmediato al profesor o evaluador.
-* **Cajas de Citas (`>`)**: Resaltan el tema principal asignado en el curso.
-* **Diagrama de Flujo:** Rediseñado con cajas de texto alineadas (`┌──┴──┐`) para que se lea perfectamente en el renderizador de Markdown de GitHub/GitLab.
-* **Secciones de Despliegue Claras:** Pasos ordenados con bloques de código listos para producción académica.

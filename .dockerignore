@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+.agents
+.codex
+target
+tools
+documentacion
+casos_prueba
+*.log
+.env
+.env.*
