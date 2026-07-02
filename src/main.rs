@@ -5,14 +5,25 @@ mod routes;
 mod stanford_client;
 
 use actix_files::Files;
-use actix_web::{App, HttpServer, web};
+use actix_web::{web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
-use tera::Tera;
+use tera::{Kwargs, State, Tera, TeraResult, Value};
 
 use routes::{
     analizar, analizar_json, index, metodologia, probar_linguakit_local, probar_stanford_local,
 };
+
+// =======================================================
+// Filtro personalizado para serializar valores Tera a JSON
+// Compatible con tera = "2.0.0"
+// =======================================================
+fn json_encode_filter(val: Value, _: Kwargs, _: &State) -> TeraResult<Value> {
+    let json_str = serde_json::to_string(&val)
+        .map_err(|e| tera::Error::message(format!("Error serializando JSON: {}", e)))?;
+
+    Ok(Value::from_serializable(&json_str))
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -24,6 +35,10 @@ async fn main() -> std::io::Result<()> {
 
     let mut tera = Tera::new();
 
+    // Registramos ambos nombres porque tus plantillas han usado | json y | json_encode
+    tera.register_filter("json", json_encode_filter);
+    tera.register_filter("json_encode", json_encode_filter);
+
     tera.add_template_files(vec![
         ("templates/index.html", Some("index.html")),
         ("templates/metodologia.html", Some("metodologia.html")),
@@ -32,7 +47,7 @@ async fn main() -> std::io::Result<()> {
             Some("partials/resultado.html"),
         ),
     ])
-    .expect("No se pudieron cargar las plantillas Tera");
+        .expect("No se pudieron cargar las plantillas Tera");
 
     println!("Servidor iniciado en http://{bind_addr}");
 
@@ -47,7 +62,7 @@ async fn main() -> std::io::Result<()> {
             .service(probar_stanford_local)
             .service(Files::new("/static", "./static").show_files_listing())
     })
-    .bind(bind_addr)?
-    .run()
-    .await
+        .bind(bind_addr)?
+        .run()
+        .await
 }

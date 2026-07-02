@@ -480,7 +480,7 @@ fn construir_grafo_dependencias(deps: &[Dependencia]) -> GrafoDependencia {
                 x1: x1 + 70,
                 y1: y1 + 34,
                 x2: x2 + 70,
-                y2: y2,
+                y2,
                 label_x: (x1 + x2) / 2 + 48,
                 label_y: (y1 + y2) / 2 + 8,
                 ud_aproximado: map_linguakit_to_ud(&dep.relacion).to_string(),

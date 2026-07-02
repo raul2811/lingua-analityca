@@ -95,10 +95,10 @@
 <!-- ║    COLUMNA DOBLE DE GRAFOS Y ANÁLISIS     ║ -->
 <!-- ╚══════════════════════════════════════════╝ -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-    
+
     <!-- Left Area: Graphs (lg:col-span-8) -->
     <div class="lg:col-span-8 space-y-6 flex flex-col justify-between">
-        
+
         <!-- Dependency Graphs Comparison -->
         <article class="dashboard-card p-5 flex-1 flex flex-col justify-between">
             <div class="pb-3 mb-4 border-b border-brand-border/40">
@@ -111,20 +111,30 @@
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- Stanford Tree Container -->
                 <div class="space-y-3 relative">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
                         <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Grafo Stanford CoreNLP</span>
                         <span class="text-[10px] text-brand-muted">Interactivo (Arrastra / Zoom)</span>
                     </div>
-                    <div id="cy-stanford" data-nodos="{{ r.grafo_stanford.nodos | json_encode | safe }}" data-aristas="{{ r.grafo_stanford.aristas | json_encode | safe }}" class="w-full h-80 bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative"></div>
+                    <div
+                        id="cy-stanford"
+                        class="w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
+                    </div>
+                    <textarea id="cy-stanford-nodos-json" class="hidden" hidden>{{ r.grafo_stanford.nodos | json_encode | safe }}</textarea>
+                    <textarea id="cy-stanford-aristas-json" class="hidden" hidden>{{ r.grafo_stanford.aristas | json_encode | safe }}</textarea>
                 </div>
 
                 <!-- Linguakit Tree Container -->
                 <div class="space-y-3 relative">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3">
                         <span class="text-xs font-semibold text-purple-400 uppercase tracking-wider">Grafo Linguakit</span>
                         <span class="text-[10px] text-brand-muted">Interactivo (Arrastra / Zoom)</span>
                     </div>
-                    <div id="cy-linguakit" data-nodos="{{ r.grafo_linguakit.nodos | json_encode | safe }}" data-aristas="{{ r.grafo_linguakit.aristas | json_encode | safe }}" class="w-full h-80 bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative"></div>
+                    <div
+                        id="cy-linguakit"
+                        class="w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
+                    </div>
+                    <textarea id="cy-linguakit-nodos-json" class="hidden" hidden>{{ r.grafo_linguakit.nodos | json_encode | safe }}</textarea>
+                    <textarea id="cy-linguakit-aristas-json" class="hidden" hidden>{{ r.grafo_linguakit.aristas | json_encode | safe }}</textarea>
                 </div>
             </div>
         </article>
@@ -159,7 +169,7 @@
 
     <!-- Área Derecha: Análisis y Gauge (lg:col-span-4) -->
     <div class="lg:col-span-4 space-y-6">
-        
+
         <!-- Análisis de Decisión y Gauge -->
         <article class="dashboard-card p-5 flex flex-col items-center">
             <div class="w-full pb-3 mb-4 border-b border-brand-border/40 text-left">
@@ -172,7 +182,7 @@
                     <!-- Background arc -->
                     <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#2a3547" stroke-width="10" stroke-linecap="round"/>
                     <!-- Colored gauge arc (Animated via dashoffset) -->
-                    <path id="gauge-fill-arc" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#gauge-grad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="126" stroke-dashoffset="126" class="transition-all duration-1000 ease-out"/>
+                    <path id="gauge-fill-arc" data-score="{{ r.decision.diferencia_fmt }}" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#gauge-grad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="126" stroke-dashoffset="126" class="transition-all duration-1000 ease-out"/>
                     <defs>
                         <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stop-color="#eab308" />
@@ -325,7 +335,7 @@
                         <td class="px-4 py-3 font-bold text-slate-100">{{ t.token }}</td>
                         <td class="px-4 py-3 text-slate-300">{{ t.lema_esperado }}</td>
                         <td class="px-4 py-3 font-mono text-brand-blue font-bold">{{ t.pos_esperado }}</td>
-                        
+
                         <td class="px-4 py-3 text-xs leading-normal">
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold {% if t.stanford_ok %}bg-emerald-500/10 text-emerald-400{% else %}bg-red-500/10 text-red-400{% endif %} mb-1">
                                 {% if t.stanford_ok %}Correcto{% else %}Revisar{% endif %}
@@ -399,200 +409,385 @@
     </button>
 </div>
 
-<textarea id="reporte-markdown" hidden>{{ r.reporte_markdown }}</textarea>
+<textarea id="reporte-markdown" class="hidden" hidden>{{ r.reporte_markdown }}</textarea>
+<textarea id="reporte-json" class="hidden" hidden>{{ r | json_encode | safe }}</textarea>
 
 <!-- LÓGICA DE INICIALIZACIÓN INTERACTIVA CYTOSCAPE.JS -->
 <script>
     (function() {
         const tooltip = document.getElementById('cy-tooltip');
-        
+        const cyStanfordEl = document.getElementById('cy-stanford');
+        const cyLinguakitEl = document.getElementById('cy-linguakit');
+
+        // Si Cytoscape no está cargado en el layout principal, mostramos un aviso claro.
+        if (typeof window.cytoscape !== 'function') {
+            console.error('Cytoscape.js no está cargado. Agrega la librería Cytoscape en el layout principal antes de este partial.');
+            showGraphMessage(cyStanfordEl, 'Cytoscape.js no está cargado. Revisa el script en el layout principal.');
+            showGraphMessage(cyLinguakitEl, 'Cytoscape.js no está cargado. Revisa el script en el layout principal.');
+            animateGauge();
+            return;
+        }
+
         // Estilos de los grafos según tema
         const isLightTheme = document.documentElement.classList.contains('light');
         const nodeBg = isLightTheme ? '#ffffff' : '#161f30';
         const nodeLabelColor = isLightTheme ? '#0f172a' : '#f8fafc';
-        
-        // --- 1. DATOS DE STANFORD ---
-        const cyStanfordEl = document.getElementById('cy-stanford');
-        let stanfordNodes = [];
-        let stanfordEdges = [];
-        if (cyStanfordEl) {
-            const nodesRaw = JSON.parse(cyStanfordEl.getAttribute('data-nodos') || '[]');
-            const edgesRaw = JSON.parse(cyStanfordEl.getAttribute('data-aristas') || '[]');
-            
-            stanfordNodes = nodesRaw.map(n => ({
-                data: { id: n.id, label: n.texto, tooltip: `<strong>Palabra:</strong> ${n.texto}` },
-                position: { x: n.x, y: n.y }
-            }));
-            
-            stanfordEdges = edgesRaw.map(a => ({
-                data: {
-                    id: `edge-st-${a.desde}-${a.hacia}`,
-                    source: a.desde,
-                    target: a.hacia,
-                    label: a.relacion,
-                    tooltip: `<strong>Dependencia:</strong> ${a.relacion}<br/><strong>Gobernador:</strong> ${a.desde}<br/><strong>Dependiente:</strong> ${a.hacia}`
-                }
-            }));
-        }
 
-        // --- 2. DATOS DE LINGUAKIT ---
-        const cyLinguakitEl = document.getElementById('cy-linguakit');
-        let linguakitNodes = [];
-        let linguakitEdges = [];
-        if (cyLinguakitEl) {
-            const nodesRaw = JSON.parse(cyLinguakitEl.getAttribute('data-nodos') || '[]');
-            const edgesRaw = JSON.parse(cyLinguakitEl.getAttribute('data-aristas') || '[]');
-            
-            linguakitNodes = nodesRaw.map(n => ({
-                data: { id: n.id, label: n.texto, tooltip: `<strong>Palabra:</strong> ${n.texto}` },
-                position: { x: n.x, y: n.y }
-            }));
-            
-            linguakitEdges = edgesRaw.map(a => ({
-                data: {
-                    id: `edge-lk-${a.desde}-${a.hacia}`,
-                    source: a.desde,
-                    target: a.hacia,
-                    label: a.relacion,
-                    tooltip: `<strong>Dependencia:</strong> ${a.relacion} (≈ ${a.ud_aproximado})<br/><strong>Gobernador:</strong> ${a.desde}<br/><strong>Dependiente:</strong> ${a.hacia}`
-                }
-            }));
-        }
+        const stanfordNodesRaw = readJsonTextarea('cy-stanford-nodos-json', []);
+        const stanfordEdgesRaw = readJsonTextarea('cy-stanford-aristas-json', []);
+        const linguakitNodesRaw = readJsonTextarea('cy-linguakit-nodos-json', []);
+        const linguakitEdgesRaw = readJsonTextarea('cy-linguakit-aristas-json', []);
 
-        // Estilos comunes para Cytoscape
-        const getStyle = (accentColor, hoverAccent) => [
-            {
-                selector: 'node',
-                style: {
-                    'label': 'data(label)',
-                    'text-valign': 'center',
-                    'text-halign': 'center',
-                    'background-color': nodeBg,
-                    'color': nodeLabelColor,
-                    'font-family': 'Inter, sans-serif',
-                    'font-size': '11px',
-                    'font-weight': '500',
-                    'shape': 'round-rectangle',
-                    'width': '125px',
-                    'height': '34px',
-                    'border-width': '1.5px',
-                    'border-color': accentColor,
-                    'transition-property': 'background-color, border-color, border-width',
-                    'transition-duration': '0.15s'
-                }
-            },
-            {
-                selector: 'node:hover',
-                style: {
-                    'border-color': hoverAccent,
-                    'border-width': '2.5px',
-                    'background-color': isLightTheme ? '#f8fafc' : '#1e293b'
-                }
-            },
-            {
-                selector: 'edge',
-                style: {
-                    'label': 'data(label)',
-                    'font-family': 'JetBrains Mono, monospace',
-                    'font-size': '8px',
-                    'font-weight': 'bold',
-                    'color': accentColor,
-                    'text-background-opacity': 0.95,
-                    'text-background-color': isLightTheme ? '#f1f5f9' : '#060e20',
-                    'text-background-padding': '3px',
-                    'text-background-shape': 'round-rectangle',
-                    'curve-style': 'bezier',
-                    'control-point-step-size': '40px',
-                    'line-color': accentColor,
-                    'target-arrow-color': accentColor,
-                    'target-arrow-shape': 'triangle',
-                    'width': 1.5,
-                    'transition-property': 'line-color, target-arrow-color, width',
-                    'transition-duration': '0.15s'
-                }
-            },
-            {
-                selector: 'edge:hover',
-                style: {
-                    'width': 3,
-                    'line-color': hoverAccent,
-                    'target-arrow-color': hoverAccent,
-                    'color': hoverAccent
-                }
-            }
-        ];
+        const stanfordNodes = buildNodes(stanfordNodesRaw, 'st');
+        const stanfordEdges = buildEdges(stanfordEdgesRaw, stanfordNodes, 'st');
+        const linguakitNodes = buildNodes(linguakitNodesRaw, 'lk');
+        const linguakitEdges = buildEdges(linguakitEdgesRaw, linguakitNodes, 'lk');
+
+        console.log('Stanford nodes:', stanfordNodes);
+        console.log('Stanford edges:', stanfordEdges);
+        console.log('Linguakit nodes:', linguakitNodes);
+        console.log('Linguakit edges:', linguakitEdges);
+        console.log('Cytoscape cargado:', typeof window.cytoscape);
+
+        const cytoscapeFn = window.cytoscape;
 
         // --- INICIALIZAR CYTOSCAPE STANFORD ---
         if (cyStanfordEl) {
-            const cyStanford = cytoscape({
-                container: cyStanfordEl,
-                elements: [...stanfordNodes, ...stanfordEdges],
-                style: getStyle('#10b981', '#34d399'),
-                layout: { name: 'preset', fit: true, padding: 30 },
-                userZoomingEnabled: true,
-                userPanningEnabled: true,
-                boxSelectionEnabled: false
-            });
-            setupTooltip(cyStanford);
+            if (stanfordNodes.length === 0) {
+                showGraphMessage(cyStanfordEl, 'No hay nodos de Stanford para graficar.');
+            } else {
+                const cyStanford = cytoscapeFn({
+                    container: cyStanfordEl,
+                    elements: [...stanfordNodes, ...stanfordEdges],
+                    style: getStyle('#10b981', '#34d399'),
+                    layout: { name: 'preset', fit: true, padding: 30 },
+                    userZoomingEnabled: true,
+                    userPanningEnabled: true,
+                    boxSelectionEnabled: false
+                });
+
+                setupTooltip(cyStanford);
+                refreshGraph(cyStanford);
+            }
         }
 
         // --- INICIALIZAR CYTOSCAPE LINGUAKIT ---
         if (cyLinguakitEl) {
-            const cyLinguakit = cytoscape({
-                container: cyLinguakitEl,
-                elements: [...linguakitNodes, ...linguakitEdges],
-                style: getStyle('#c084fc', '#d8b4fe'),
-                layout: { name: 'preset', fit: true, padding: 30 },
-                userZoomingEnabled: true,
-                userPanningEnabled: true,
-                boxSelectionEnabled: false
+            if (linguakitNodes.length === 0) {
+                showGraphMessage(cyLinguakitEl, 'No hay nodos de Linguakit para graficar.');
+            } else {
+                const cyLinguakit = cytoscapeFn({
+                    container: cyLinguakitEl,
+                    elements: [...linguakitNodes, ...linguakitEdges],
+                    style: getStyle('#c084fc', '#d8b4fe'),
+                    layout: { name: 'preset', fit: true, padding: 30 },
+                    userZoomingEnabled: true,
+                    userPanningEnabled: true,
+                    boxSelectionEnabled: false
+                });
+
+                setupTooltip(cyLinguakit);
+                refreshGraph(cyLinguakit);
+            }
+        }
+
+        animateGauge();
+
+        // --- HELPERS ---
+        function readJsonTextarea(id, fallback) {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.warn(`No existe el bloque JSON #${id}`);
+                return fallback;
+            }
+
+            const raw = (el.textContent || '').trim();
+            if (!raw) {
+                return fallback;
+            }
+
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                console.error(`JSON inválido en #${id}:`, error, raw);
+                return fallback;
+            }
+        }
+
+        function buildNodes(nodesRaw, prefix) {
+            if (!Array.isArray(nodesRaw)) {
+                console.warn(`Los nodos ${prefix} no llegaron como arreglo:`, nodesRaw);
+                return [];
+            }
+
+            return nodesRaw.map((n, index) => {
+                const id = String(n.id ?? n.indice ?? n.index ?? `${prefix}-node-${index}`);
+                const label = String(n.texto ?? n.token ?? n.palabra ?? n.label ?? id);
+                const x = Number(n.x ?? ((index + 1) * 150));
+                const y = Number(n.y ?? (80 + (index % 2) * 90));
+
+                return {
+                    data: {
+                        id,
+                        label,
+                        tooltip: `<strong>Palabra:</strong> ${escapeHtml(label)}<br/><strong>ID:</strong> ${escapeHtml(id)}`
+                    },
+                    position: { x, y }
+                };
             });
-            setupTooltip(cyLinguakit);
         }
 
-        // --- ANIMAR EL GAUGE DE CONFIANZA ---
-        const scoreVal = parseInt('{{ r.decision.diferencia_fmt }}') || 0;
-        const arc = document.getElementById('gauge-fill-arc');
-        if (arc) {
-            const offset = 126 * (1 - (scoreVal / 100));
-            setTimeout(() => {
-                arc.style.strokeDashoffset = offset;
-            }, 100);
+        function buildEdges(edgesRaw, nodes, prefix) {
+            if (!Array.isArray(edgesRaw)) {
+                console.warn(`Las aristas ${prefix} no llegaron como arreglo:`, edgesRaw);
+                return [];
+            }
+
+            const nodeIds = new Set(nodes.map(n => n.data.id));
+
+            return edgesRaw
+                .map((a, index) => {
+                    const source = String(a.desde ?? a.source ?? a.gobernador ?? '');
+                    const target = String(a.hacia ?? a.target ?? a.dependiente ?? '');
+                    const label = String(a.relacion ?? a.label ?? a.tipo ?? 'dep');
+                    const ud = String(a.ud_aproximado ?? a.ud ?? 'N/A');
+
+                    return {
+                        source,
+                        target,
+                        label,
+                        ud,
+                        raw: a,
+                        index
+                    };
+                })
+                .filter(a => {
+                    const isValid = nodeIds.has(a.source) && nodeIds.has(a.target);
+                    if (!isValid) {
+                        console.warn(`Arista ignorada en ${prefix}: nodo origen/destino no existe`, a.raw);
+                    }
+                    return isValid;
+                })
+                .map(a => ({
+                    data: {
+                        id: `edge-${prefix}-${a.index}-${a.source}-${a.target}`,
+                        source: a.source,
+                        target: a.target,
+                        label: a.label,
+                        tooltip:
+                            `<strong>Dependencia:</strong> ${escapeHtml(a.label)}` +
+                            `<br/><strong>UD aprox.:</strong> ${escapeHtml(a.ud)}` +
+                            `<br/><strong>Gobernador:</strong> ${escapeHtml(a.source)}` +
+                            `<br/><strong>Dependiente:</strong> ${escapeHtml(a.target)}`
+                    }
+                }));
         }
 
-        // --- CONFIGURAR TOOLTIPS ---
+        // Estilos comunes para Cytoscape
+        function getStyle(accentColor, hoverAccent) {
+            return [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'background-color': nodeBg,
+                        'color': nodeLabelColor,
+                        'font-family': 'Inter, sans-serif',
+                        'font-size': '11px',
+                        'font-weight': '500',
+                        'shape': 'round-rectangle',
+                        'width': '125px',
+                        'height': '34px',
+                        'border-width': '1.5px',
+                        'border-color': accentColor,
+                        'text-wrap': 'wrap',
+                        'text-max-width': '110px',
+                        'transition-property': 'background-color, border-color, border-width',
+                        'transition-duration': '0.15s'
+                    }
+                },
+                {
+                    selector: 'node:hover',
+                    style: {
+                        'border-color': hoverAccent,
+                        'border-width': '2.5px',
+                        'background-color': isLightTheme ? '#f8fafc' : '#1e293b'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'label': 'data(label)',
+                        'font-family': 'JetBrains Mono, monospace',
+                        'font-size': '8px',
+                        'font-weight': 'bold',
+                        'color': accentColor,
+                        'text-background-opacity': 0.95,
+                        'text-background-color': isLightTheme ? '#f1f5f9' : '#060e20',
+                        'text-background-padding': '3px',
+                        'text-background-shape': 'round-rectangle',
+                        'curve-style': 'bezier',
+                        'control-point-step-size': '40px',
+                        'line-color': accentColor,
+                        'target-arrow-color': accentColor,
+                        'target-arrow-shape': 'triangle',
+                        'width': 1.5,
+                        'transition-property': 'line-color, target-arrow-color, width',
+                        'transition-duration': '0.15s'
+                    }
+                },
+                {
+                    selector: 'edge:hover',
+                    style: {
+                        'width': 3,
+                        'line-color': hoverAccent,
+                        'target-arrow-color': hoverAccent,
+                        'color': hoverAccent
+                    }
+                }
+            ];
+        }
+
         function setupTooltip(cy) {
+            if (!tooltip) {
+                return;
+            }
+
             cy.on('mouseover', 'node, edge', function(evt) {
                 const target = evt.target;
-                const renderedPosition = target.renderedPosition ? target.renderedPosition() : null;
-                const cyContainer = cy.container();
-                const containerRect = cyContainer.getBoundingClientRect();
-                
-                tooltip.innerHTML = target.data('tooltip');
+                tooltip.innerHTML = target.data('tooltip') || '';
                 tooltip.classList.remove('hidden');
-                
-                // Posicionar tooltip con respecto al cursor / viewport
-                const updatePos = (clientX, clientY) => {
-                    tooltip.style.left = (clientX + window.scrollX + 15) + 'px';
-                    tooltip.style.top = (clientY + window.scrollY - 15) + 'px';
-                };
-                
-                // Guardar callback de mousemove
-                target.scratch('_mousemove', function(e) {
-                    updatePos(e.originalEvent.clientX, e.originalEvent.clientY);
-                });
-                
-                cy.on('mousemove', target, target.scratch('_mousemove'));
-            });
-            
-            cy.on('mouseout', 'node, edge', function(evt) {
-                const target = evt.target;
-                tooltip.classList.add('hidden');
-                if (target.scratch('_mousemove')) {
-                    cy.off('mousemove', target, target.scratch('_mousemove'));
-                    target.removeScratch('_mousemove');
+
+                if (evt.originalEvent) {
+                    moveTooltip(evt.originalEvent.clientX, evt.originalEvent.clientY);
                 }
             });
+
+            cy.on('mousemove', 'node, edge', function(evt) {
+                if (evt.originalEvent) {
+                    moveTooltip(evt.originalEvent.clientX, evt.originalEvent.clientY);
+                }
+            });
+
+            cy.on('mouseout', 'node, edge', function() {
+                tooltip.classList.add('hidden');
+            });
+        }
+
+        function moveTooltip(clientX, clientY) {
+            if (!tooltip) {
+                return;
+            }
+
+            tooltip.style.left = (clientX + window.scrollX + 15) + 'px';
+            tooltip.style.top = (clientY + window.scrollY - 15) + 'px';
+        }
+
+        function refreshGraph(cy) {
+            cy.ready(() => {
+                cy.resize();
+                cy.fit(undefined, 30);
+                cy.center();
+            });
+
+            setTimeout(() => {
+                cy.resize();
+                cy.fit(undefined, 30);
+                cy.center();
+            }, 150);
+
+            window.addEventListener('resize', () => {
+                cy.resize();
+                cy.fit(undefined, 30);
+            });
+        }
+
+        function showGraphMessage(container, message) {
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="absolute inset-0 flex items-center justify-center p-4 text-center">
+                    <div class="text-xs text-brand-muted bg-brand-card/80 border border-brand-border/40 rounded-xl px-4 py-3">
+                        ${escapeHtml(message)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function animateGauge() {
+            const arc = document.getElementById('gauge-fill-arc');
+            const scoreText = arc ? String(arc.dataset.score || '0').replace(',', '.') : '0';
+            const scoreVal = parseFloat(scoreText) || 0;
+            if (arc) {
+                const normalizedScore = Math.max(0, Math.min(100, scoreVal));
+                const offset = 126 * (1 - (normalizedScore / 100));
+                setTimeout(() => {
+                    arc.style.strokeDashoffset = offset;
+                }, 100);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
         }
     })();
+
+    // --- FUNCIONES DE EXPORTACIÓN GLOBALES ---
+    function exportarJson() {
+        try {
+            const jsonEl = document.getElementById('reporte-json');
+            const rawJson = jsonEl ? jsonEl.value.trim() : '';
+            if (!rawJson) {
+                alert('No hay datos JSON disponibles para exportar.');
+                return;
+            }
+            const data = JSON.parse(rawJson);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `reporte_alineacion_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error al exportar el JSON:', error);
+            alert('Error al generar el archivo JSON. Asegúrate de que el objeto r esté bien serializado.');
+        }
+    }
+
+    function exportarMarkdown() {
+        try {
+            const markdownEl = document.getElementById('reporte-markdown');
+            const mdContent = markdownEl ? markdownEl.value : '';
+
+            if (!mdContent) {
+                alert('No hay contenido Markdown disponible para exportar.');
+                return;
+            }
+
+            const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `reporte_alineacion_${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error al exportar el Markdown:', error);
+            alert('Ocurrió un error al intentar descargar el reporte en Markdown.');
+        }
+    }
 </script>

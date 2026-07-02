@@ -29,4 +29,3 @@ target
 .idea/
 
 # External NLP tools are downloaded during container builds.
-/tools/
