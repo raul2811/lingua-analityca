@@ -5,23 +5,22 @@ use std::env;
 use urlencoding::encode;
 
 pub async fn analizar_stanford_real(texto: &str) -> StanfordResult {
-    let base_url = env::var("STANFORD_URL")
-        .unwrap_or_else(|_| "http://localhost:9000".to_string());
+    let base_url = env::var("STANFORD_URL").unwrap_or_else(|_| "http://localhost:9000".to_string());
 
     let properties = serde_json::json!({
         "annotators": "tokenize,ssplit,mwt,pos,lemma,depparse",
         "outputFormat": "json"
     });
 
-    let url = format!("{}/?properties={}", base_url, encode(&properties.to_string()));
+    let url = format!(
+        "{}/?properties={}",
+        base_url,
+        encode(&properties.to_string())
+    );
 
     let client = Client::new();
 
-    let response = client
-        .post(&url)
-        .body(texto.to_string())
-        .send()
-        .await;
+    let response = client.post(&url).body(texto.to_string()).send().await;
 
     let Ok(resp) = response else {
         return StanfordResult {
@@ -109,9 +108,7 @@ fn extraer_dependencias_stanford(json: &Value) -> Vec<Dependencia> {
     };
 
     for sentence in sentences {
-        let Some(deps) = sentence
-            .get("basicDependencies")
-            .and_then(|v| v.as_array()) else {
+        let Some(deps) = sentence.get("basicDependencies").and_then(|v| v.as_array()) else {
             continue;
         };
 

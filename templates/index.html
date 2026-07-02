@@ -9,8 +9,12 @@
     <main style="padding:32px;max-width:1200px;margin:auto;">
         <h1>LINGUA-ANALYTICA V2.1</h1>
         <p>Comparador real entre Stanford CoreNLP y Linguakit Local CLI.</p>
+        <p>
+            <a href="/metodologia" style="color:#adc6ff;">Ver metodología académica, pesos y referencias</a>
+        </p>
 
         <form
+            id="analisis-form"
             hx-post="/analizar"
             hx-target="#resultado"
             hx-swap="innerHTML"
@@ -44,11 +48,65 @@
             </button>
         </form>
 
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+            <h2 style="margin-top:0;color:#adc6ff;">Casos de prueba</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button type="button" data-texto="El estudiante analizó la oración correctamente." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración simple</button>
+                <button type="button" data-texto="El estudiante analizó la oración y explicó sus dependencias al profesor." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración compuesta</button>
+                <button type="button" data-texto="El informe técnico describe la arquitectura del sistema y documenta los criterios de evaluación." data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto formal</button>
+                <button type="button" data-texto="El analizador procesa una entrada extensa con varios modificadores, complementos preposicionales y relaciones sintácticas que deben compararse entre herramientas." data-tipo="largo" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto largo</button>
+                <button type="button" data-texto="Vi al hombre con el telescopio." data-tipo="ambiguo" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Oración ambigua</button>
+                <button type="button" data-texto="el perro esta cagando siempre lanza stanford?" data-tipo="informal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Texto informal</button>
+                <button type="button" data-texto="" data-tipo="formal" onclick="usarCaso(this)" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Entrada vacía</button>
+            </div>
+        </section>
+
         <section id="resultado">
             <div style="background:#0f172a;border:1px solid #424754;padding:20px;">
                 Ingrese una oración y presione analizar.
             </div>
         </section>
     </main>
+    <script>
+        function usarCaso(button) {
+            const form = document.getElementById("analisis-form");
+            form.elements.texto.value = button.dataset.texto;
+            form.elements.tipo.value = button.dataset.tipo;
+            form.requestSubmit();
+        }
+
+        function descargarArchivo(nombre, contenido, tipo) {
+            const blob = new Blob([contenido], { type: tipo });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = nombre;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        async function exportarJson() {
+            const form = document.getElementById("analisis-form");
+            const response = await fetch("/api/analizar", {
+                method: "POST",
+                body: new URLSearchParams(new FormData(form)),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+            const json = await response.text();
+            descargarArchivo("analisis-lingua-analytica.json", json, "application/json");
+        }
+
+        function exportarMarkdown() {
+            const reporte = document.getElementById("reporte-markdown");
+
+            if (!reporte) {
+                return;
+            }
+
+            descargarArchivo("analisis-lingua-analytica.md", reporte.value, "text/markdown");
+        }
+    </script>
 </body>
 </html>

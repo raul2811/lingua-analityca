@@ -1,3 +1,39 @@
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+    <h2 style="margin-top:0;color:#adc6ff;">Estado de herramientas</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Stanford CoreNLP</strong>
+            <p style="margin:8px 0 0;">{{ r.stanford_metricas.estado }} | Latencia: {{ r.stanford_metricas.latencia_fmt }}</p>
+        </div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Linguakit</strong>
+            <p style="margin:8px 0 0;">{{ r.linguakit_metricas.estado }} | Latencia: {{ r.linguakit_metricas.latencia_fmt }}</p>
+        </div>
+    </div>
+</section>
+
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+    <h2 style="margin-top:0;color:#adc6ff;">Resumen ejecutivo automático</h2>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;">
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Conclusiones principales</strong>
+            <ul style="margin-bottom:0;">
+                {% for punto in r.resumen_ejecutivo.puntos %}
+                <li>{{ punto }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Evidencia clave</strong>
+            <ul style="margin-bottom:0;">
+                {% for evidencia in r.resumen_ejecutivo.evidencia_clave %}
+                <li>{{ evidencia }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+
 <section style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
 
     <article style="background:#0f172a;border:1px solid #424754;padding:20px;">
@@ -76,8 +112,300 @@
 
 </section>
 
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+    <h2 style="margin-top:0;color:#adc6ff;">Comparación token por token</h2>
+    <table style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Token</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Stanford lema</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Linguakit lema</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Stanford POS</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Linguakit POS</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Diferencia</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in r.comparacion_tokens %}
+            <tr>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.token }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.stanford_lema }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.linguakit_lema }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.stanford_pos }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.linguakit_pos }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.diferencia }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+    <article style="background:#0f172a;border:1px solid #424754;padding:20px;">
+        <h2 style="margin-top:0;color:#adc6ff;">Mapeo Linguakit a UD</h2>
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Linguakit</th>
+                    <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Equivalente UD</th>
+                    <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Significado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in r.mapeo_dependencias %}
+                <tr>
+                    <td style="border-bottom:1px solid #424754;padding:8px;">{{ m.linguakit }}</td>
+                    <td style="border-bottom:1px solid #424754;padding:8px;">{{ m.ud_aproximado }}</td>
+                    <td style="border-bottom:1px solid #424754;padding:8px;">{{ m.significado }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article style="background:#0f172a;border:1px solid #424754;padding:20px;">
+        <h2 style="margin-top:0;color:#adc6ff;">Árboles de dependencias</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+                <h3>Stanford</h3>
+                <div style="background:#060e20;border:1px solid #424754;padding:12px;overflow:auto;">
+                    <svg width="{{ r.grafo_stanford.width }}" height="{{ r.grafo_stanford.height }}" viewBox="0 0 {{ r.grafo_stanford.width }} {{ r.grafo_stanford.height }}" role="img" aria-label="Grafo de dependencias de Stanford">
+                        <defs>
+                            <marker id="arrow-stanford-tree" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#8ba0c8"></path>
+                            </marker>
+                        </defs>
+                        {% for a in r.grafo_stanford.aristas %}
+                        <line x1="{{ a.x1 }}" y1="{{ a.y1 }}" x2="{{ a.x2 }}" y2="{{ a.y2 }}" stroke="#8ba0c8" stroke-width="1.2" marker-end="url(#arrow-stanford-tree)"></line>
+                        <rect x="{{ a.label_x }}" y="{{ a.label_y }}" width="76" height="22" fill="#060e20" stroke="#424754"></rect>
+                        <text x="{{ a.label_x + 8 }}" y="{{ a.label_y + 15 }}" fill="#dae2fd" style="font:12px Arial,sans-serif;">{{ a.relacion }}</text>
+                        {% endfor %}
+                        {% for n in r.grafo_stanford.nodos %}
+                        <rect x="{{ n.x }}" y="{{ n.y }}" width="140" height="38" fill="#0f172a" stroke="#adc6ff"></rect>
+                        <text x="{{ n.x + 10 }}" y="{{ n.y + 24 }}" fill="#dae2fd" style="font:14px Arial,sans-serif;">{{ n.texto }}</text>
+                        {% endfor %}
+                    </svg>
+                </div>
+                <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Gobernador</th>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Relación</th>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Dependiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for d in r.stanford.dependencias %}
+                        <tr>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.gobernador }}</td>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.relacion }}</td>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.dependiente }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3>Linguakit</h3>
+                <div style="background:#060e20;border:1px solid #424754;padding:12px;overflow:auto;">
+                    <svg width="{{ r.grafo_linguakit.width }}" height="{{ r.grafo_linguakit.height }}" viewBox="0 0 {{ r.grafo_linguakit.width }} {{ r.grafo_linguakit.height }}" role="img" aria-label="Grafo de dependencias de Linguakit">
+                        <defs>
+                            <marker id="arrow-linguakit-tree" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#8ba0c8"></path>
+                            </marker>
+                        </defs>
+                        {% for a in r.grafo_linguakit.aristas %}
+                        <line x1="{{ a.x1 }}" y1="{{ a.y1 }}" x2="{{ a.x2 }}" y2="{{ a.y2 }}" stroke="#8ba0c8" stroke-width="1.2" marker-end="url(#arrow-linguakit-tree)"></line>
+                        <rect x="{{ a.label_x }}" y="{{ a.label_y }}" width="104" height="36" fill="#060e20" stroke="#424754"></rect>
+                        <text x="{{ a.label_x + 8 }}" y="{{ a.label_y + 14 }}" fill="#dae2fd" style="font:12px Arial,sans-serif;">{{ a.relacion }}</text>
+                        <text x="{{ a.label_x + 8 }}" y="{{ a.label_y + 29 }}" fill="#89ceff" style="font:11px Arial,sans-serif;">≈ {{ a.ud_aproximado }}</text>
+                        {% endfor %}
+                        {% for n in r.grafo_linguakit.nodos %}
+                        <rect x="{{ n.x }}" y="{{ n.y }}" width="150" height="38" fill="#0f172a" stroke="#89ceff"></rect>
+                        <text x="{{ n.x + 10 }}" y="{{ n.y + 24 }}" fill="#dae2fd" style="font:14px Arial,sans-serif;">{{ n.texto }}</text>
+                        {% endfor %}
+                    </svg>
+                </div>
+                <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Gobernador</th>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Relación</th>
+                            <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Dependiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for d in r.linguakit.dependencias %}
+                        <tr>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.gobernador }}</td>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.relacion }}</td>
+                            <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.dependiente }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+</section>
+
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+    <h2 style="margin-top:0;color:#adc6ff;">Evaluación con gold standard manual</h2>
+    {% if r.gold.disponible %}
+    <p><strong>Caso:</strong> {{ r.gold.caso }} | {{ r.gold.descripcion }}</p>
+    <p>{{ r.gold.nota }}</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;"><strong>Stanford POS/Lema</strong><br>{{ r.gold.stanford_token_score_fmt }}</div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;"><strong>Linguakit POS/Lema</strong><br>{{ r.gold.linguakit_token_score_fmt }}</div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;"><strong>Stanford dependencias</strong><br>{{ r.gold.stanford_dep_score_fmt }}</div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;"><strong>Linguakit dependencias</strong><br>{{ r.gold.linguakit_dep_score_fmt }}</div>
+    </div>
+
+    <h3>Tokens esperados</h3>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+        <thead>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Token</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Gold lema</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Gold POS</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Stanford</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Linguakit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in r.gold.tokens %}
+            <tr>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.token }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.lema_esperado }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ t.pos_esperado }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if t.stanford_ok %}Correcto{% else %}Revisar{% endif %} | {{ t.stanford_lema }} / {{ t.stanford_pos }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if t.linguakit_ok %}Correcto{% else %}Revisar{% endif %} | {{ t.linguakit_lema }} / {{ t.linguakit_pos }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Dependencias esperadas</h3>
+    <table style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Gobernador esperado</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Relación esperada</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Dependiente esperado</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Stanford</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Linguakit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in r.gold.dependencias %}
+            <tr>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.gobernador }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.relacion }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ d.dependiente }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if d.stanford_ok %}Correcto{% else %}No coincide{% endif %}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if d.linguakit_ok %}Correcto{% else %}No coincide{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>{{ r.gold.nota }}</p>
+    <p>La entrada actual no coincide con los 5 casos gold manuales incluidos. La decisión se mantiene como rúbrica trazable, no como medición LAS oficial.</p>
+    {% endif %}
+</section>
+
+<section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+    <h2 style="margin-top:0;color:#adc6ff;">Grafo de construcción de la decisión</h2>
+
+    <div style="overflow:auto;background:#060e20;border:1px solid #424754;padding:16px;margin-bottom:16px;">
+        <svg width="1120" height="360" viewBox="0 0 1120 360" role="img" aria-label="Grafo de construcción de la decisión técnica">
+            <defs>
+                <marker id="arrow-decision" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#8ba0c8"></path>
+                </marker>
+            </defs>
+
+            <style>
+                .node { fill:#0f172a; stroke:#424754; stroke-width:1; }
+                .node-strong { fill:#13213a; stroke:#adc6ff; stroke-width:1.2; }
+                .node-warn { fill:#1f1d12; stroke:#c9a227; stroke-width:1.2; }
+                .edge { stroke:#8ba0c8; stroke-width:1.2; marker-end:url(#arrow-decision); }
+                .label { fill:#dae2fd; font:14px Arial, sans-serif; }
+                .small { fill:#aeb9d6; font:12px Arial, sans-serif; }
+                .score { fill:#ffffff; font:700 16px Arial, sans-serif; }
+            </style>
+
+            <rect class="node" x="20" y="132" width="150" height="88" rx="4"></rect>
+            <text class="label" x="36" y="160">Entrada</text>
+            <text class="small" x="36" y="184">Tipo: {{ r.decision.perfil_texto.tipo_detectado }}</text>
+            <text class="small" x="36" y="204">Tokens: {{ r.decision.perfil_texto.tokens_estimados }}</text>
+
+            <line class="edge" x1="170" y1="176" x2="220" y2="110"></line>
+            <line class="edge" x1="170" y1="176" x2="220" y2="242"></line>
+
+            <rect class="node" x="220" y="64" width="180" height="92" rx="4"></rect>
+            <text class="label" x="236" y="92">Stanford CoreNLP</text>
+            <text class="small" x="236" y="116">{{ r.stanford_metricas.estado }}</text>
+            <text class="small" x="236" y="136">{{ r.stanford_metricas.latencia_fmt }}</text>
+
+            <rect class="node" x="220" y="196" width="180" height="92" rx="4"></rect>
+            <text class="label" x="236" y="224">Linguakit</text>
+            <text class="small" x="236" y="248">{{ r.linguakit_metricas.estado }}</text>
+            <text class="small" x="236" y="268">{{ r.linguakit_metricas.latencia_fmt }}</text>
+
+            <line class="edge" x1="400" y1="110" x2="465" y2="158"></line>
+            <line class="edge" x1="400" y1="242" x2="465" y2="194"></line>
+
+            <rect class="node-strong" x="465" y="132" width="170" height="88" rx="4"></rect>
+            <text class="label" x="481" y="160">Normalización</text>
+            <text class="small" x="481" y="184">Tokens, lemas, POS</text>
+            <text class="small" x="481" y="204">Relaciones UD aproximadas</text>
+
+            <line class="edge" x1="635" y1="176" x2="700" y2="176"></line>
+
+            <rect class="node" x="700" y="48" width="180" height="264" rx="4"></rect>
+            <text class="label" x="716" y="76">Rúbrica ponderada</text>
+            {% for f in r.decision.factores %}
+            <text class="small" x="716" y="{{ 102 + loop.index0 * 22 }}">{{ f.criterio }}: {{ f.peso_fmt }}</text>
+            {% endfor %}
+
+            <line class="edge" x1="880" y1="176" x2="940" y2="132"></line>
+            <line class="edge" x1="880" y1="176" x2="940" y2="220"></line>
+
+            <rect class="node-strong" x="940" y="88" width="160" height="76" rx="4"></rect>
+            <text class="label" x="956" y="116">Puntajes</text>
+            <text class="score" x="956" y="142">S: {{ r.decision.puntos_stanford_fmt }} | L: {{ r.decision.puntos_linguakit_fmt }}</text>
+
+            <rect class="{% if r.decision.requiere_revision_manual %}node-warn{% else %}node-strong{% endif %}" x="940" y="200" width="160" height="96" rx="4"></rect>
+            <text class="label" x="956" y="228">Decisión</text>
+            <text class="small" x="956" y="252">Confianza: {{ r.decision.confianza }}</text>
+            <text class="small" x="956" y="272">Diferencia: {{ r.decision.diferencia_fmt }}</text>
+        </svg>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>1. Evidencia</strong>
+            <p style="margin:8px 0 0;">Se toman tokens, lemas, POS, dependencias, estado y latencia de ambas herramientas.</p>
+        </div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>2. Normalización</strong>
+            <p style="margin:8px 0 0;">Las relaciones de Linguakit se aproximan a UD para compararlas contra Stanford.</p>
+        </div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>3. Regla final</strong>
+            <p style="margin:8px 0 0;">Si la diferencia es baja o hay ambigüedad, se activa revisión manual.</p>
+        </div>
+    </div>
+</section>
+
 <section style="background:#0f172a;border:1px solid #424754;padding:20px;">
-    <h2 style="color:#adc6ff;">Matriz de decisión automática</h2>
+    <h2 style="color:#adc6ff;">Matriz de decisión técnica</h2>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button type="button" onclick="exportarJson()" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Exportar JSON</button>
+        <button type="button" onclick="exportarMarkdown()" style="padding:10px 12px;background:#060e20;color:#dae2fd;border:1px solid #424754;">Exportar Markdown</button>
+    </div>
 
     <p>
         <strong>Recomendación:</strong>
@@ -86,6 +414,91 @@
 
     <p>{{ r.decision.justificacion }}</p>
 
-    <p><strong>Stanford:</strong> {{ r.decision.puntos_stanford }} pts</p>
-    <p><strong>Linguakit:</strong> {{ r.decision.puntos_linguakit }} pts</p>
+    <p><strong>Metodología:</strong> {{ r.decision.metodologia }}</p>
+    <p><strong>Confianza:</strong> {{ r.decision.confianza }}</p>
+    <p><strong>Diferencia:</strong> {{ r.decision.diferencia_fmt }} pts</p>
+    <p><strong>Requiere revisión manual:</strong> {% if r.decision.requiere_revision_manual %}Sí{% else %}No{% endif %}</p>
+
+    {% if r.decision.requiere_revision_manual %}
+    <div style="background:#1f1d12;border:1px solid #c9a227;padding:12px;margin:16px 0;">
+        <h3 style="margin-top:0;">Por qué no se elige un ganador único</h3>
+        <ul style="margin-bottom:0;">
+            {% for razon in r.razones_revision %}
+            <li>{{ razon }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0;">
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Stanford CoreNLP</strong>
+            <p style="margin:8px 0 0;">{{ r.decision.puntos_stanford_fmt }} / 100 pts</p>
+        </div>
+        <div style="background:#060e20;border:1px solid #424754;padding:12px;">
+            <strong>Linguakit</strong>
+            <p style="margin:8px 0 0;">{{ r.decision.puntos_linguakit_fmt }} / 100 pts</p>
+        </div>
+    </div>
+
+    <h3>Perfil del texto</h3>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+        <tbody>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Tipo seleccionado</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ r.decision.perfil_texto.tipo_usuario }}</td>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Tipo detectado</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ r.decision.perfil_texto.tipo_detectado }}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Tokens estimados</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ r.decision.perfil_texto.tokens_estimados }}</td>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Texto largo</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if r.decision.perfil_texto.es_largo %}Sí{% else %}No{% endif %}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Pregunta</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if r.decision.perfil_texto.es_pregunta %}Sí{% else %}No{% endif %}</td>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Ruido informal</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{% if r.decision.perfil_texto.tiene_ruido %}Sí{% else %}No{% endif %}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Candidato ambiguo</th>
+                <td style="border-bottom:1px solid #424754;padding:8px;" colspan="3">{% if r.decision.perfil_texto.candidato_ambiguo %}Sí{% else %}No{% endif %}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Desglose ponderado</h3>
+    <table style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Grupo</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Criterio</th>
+                <th style="text-align:right;border-bottom:1px solid #424754;padding:8px;">Peso</th>
+                <th style="text-align:right;border-bottom:1px solid #424754;padding:8px;">Stanford</th>
+                <th style="text-align:right;border-bottom:1px solid #424754;padding:8px;">Linguakit</th>
+                <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Explicación</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in r.decision.factores %}
+            <tr>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ f.grupo }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ f.criterio }}</td>
+                <td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">{{ f.peso_fmt }}</td>
+                <td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">{{ f.stanford_fmt }}</td>
+                <td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">{{ f.linguakit_fmt }}</td>
+                <td style="border-bottom:1px solid #424754;padding:8px;">{{ f.explicacion }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h3>Limitaciones del análisis</h3>
+    <ul>
+        {% for limitacion in r.limitaciones %}
+        <li>{{ limitacion }}</li>
+        {% endfor %}
+    </ul>
+    <textarea id="reporte-markdown" hidden>{{ r.reporte_markdown }}</textarea>
 </section>

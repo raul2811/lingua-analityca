@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Metodología - Lingua-Analytica</title>
+</head>
+<body style="background:#0b1326;color:#dae2fd;font-family:Arial,sans-serif;margin:0;">
+    <main style="padding:32px;max-width:1100px;margin:auto;">
+        <p><a href="/" style="color:#adc6ff;">Volver al analizador</a></p>
+        <h1>Metodología de evaluación</h1>
+        <p>La decisión técnica combina evaluación lingüística, señales operativas y una matriz multicriterio ponderada. El objetivo no es declarar un parser universalmente superior, sino justificar cuál salida es más útil para una oración concreta.</p>
+
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+            <h2 style="margin-top:0;color:#adc6ff;">Fórmula de scoring</h2>
+            <pre style="background:#060e20;border:1px solid #424754;padding:12px;overflow:auto;">Puntaje(herramienta) = Σ peso_criterio × valor_normalizado_criterio</pre>
+            <p>Cada criterio se normaliza entre 0 y 1 y luego se multiplica por su peso. La suma máxima es 100 puntos.</p>
+        </section>
+
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+            <h2 style="margin-top:0;color:#adc6ff;">Pesos de la matriz</h2>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Grupo</th>
+                        <th style="text-align:left;border-bottom:1px solid #424754;padding:8px;">Criterio</th>
+                        <th style="text-align:right;border-bottom:1px solid #424754;padding:8px;">Peso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Técnico</td><td style="border-bottom:1px solid #424754;padding:8px;">Disponibilidad</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">10</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Lingüístico</td><td style="border-bottom:1px solid #424754;padding:8px;">Tokenización y POS</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">12</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Lingüístico</td><td style="border-bottom:1px solid #424754;padding:8px;">Lematización</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">14</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Lingüístico</td><td style="border-bottom:1px solid #424754;padding:8px;">Cobertura de dependencias</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">18</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Lingüístico</td><td style="border-bottom:1px solid #424754;padding:8px;">Relaciones sintácticas clave</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">12</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Estructural</td><td style="border-bottom:1px solid #424754;padding:8px;">Validez estructural</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">12</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Comparativo</td><td style="border-bottom:1px solid #424754;padding:8px;">Acuerdo entre parsers</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">10</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Perfil</td><td style="border-bottom:1px solid #424754;padding:8px;">Ajuste al tipo de texto</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">8</td></tr>
+                    <tr><td style="border-bottom:1px solid #424754;padding:8px;">Operativo</td><td style="border-bottom:1px solid #424754;padding:8px;">Integración y control local</td><td style="text-align:right;border-bottom:1px solid #424754;padding:8px;">4</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+            <h2 style="margin-top:0;color:#adc6ff;">Reglas de confianza</h2>
+            <ul>
+                <li>Diferencia menor a 8 puntos: uso combinado o revisión manual.</li>
+                <li>Diferencia entre 8 y 14 puntos: gana una herramienta con confianza media.</li>
+                <li>Diferencia de 15 puntos o más: recomendación con confianza alta.</li>
+                <li>Si una herramienta falla o la salida es insuficiente, no se recomienda aunque tenga ventajas históricas.</li>
+                <li>Si el texto es ambiguo o hay desacuerdo fuerte, se prioriza la revisión manual.</li>
+            </ul>
+        </section>
+
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;margin-bottom:24px;">
+            <h2 style="margin-top:0;color:#adc6ff;">UD, CoNLL-U, LAS, MLAS y BLEX</h2>
+            <p>Universal Dependencies permite representar tokens, lemas, POS, rasgos morfológicos, cabeza sintáctica y relación de dependencia en un esquema común. CoNLL-U es el formato tabular estándar de 10 columnas usado para anotar y evaluar esas estructuras.</p>
+            <p>LAS evalúa si cada palabra tiene la cabeza sintáctica correcta y la etiqueta correcta. MLAS añade información morfológica y POS. BLEX combina dependencias con lemas, por eso es especialmente útil cuando una herramienta lematiza mejor verbos y sustantivos del español.</p>
+            <p>Esta aplicación no calcula LAS oficial para cualquier entrada libre. Para eso se necesita un corpus gold completo en CoNLL-U. En su lugar usa una rúbrica trazable y, cuando la oración coincide con un caso incluido, una evaluación gold reducida.</p>
+        </section>
+
+        <section style="background:#0f172a;border:1px solid #424754;padding:20px;">
+            <h2 style="margin-top:0;color:#adc6ff;">Referencias académicas</h2>
+            <ul>
+                <li>Manning, C., Surdeanu, M., Bauer, J., Finkel, J., Bethard, S., & McClosky, D. (2014). The Stanford CoreNLP Natural Language Processing Toolkit.</li>
+                <li>Gamallo, P., & Garcia, M. (2017). LinguaKit: A multilingual tool for linguistic analysis and information extraction.</li>
+                <li>Gamallo, P., Garcia, M., Piñeiro, C., Martínez-Castaño, R., & Pichel, J. C. (2018). LinguaKit: A Big Data-Based Multilingual Tool for Linguistic Analysis and Information Extraction.</li>
+                <li>Zeman, D., Hajič, J., Popel, M., Potthast, M., Straka, M., Ginter, F., Nivre, J., & Petrov, S. (2018). CoNLL 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies.</li>
+                <li>Nivre, J., de Marneffe, M.-C., Ginter, F., Hajič, J., Manning, C. D., Pyysalo, S., Schuster, S., Tyers, F., & Zeman, D. (2020). Universal Dependencies v2.</li>
+                <li>de Marneffe, M.-C., Manning, C. D., Nivre, J., & Zeman, D. (2021). Universal Dependencies.</li>
+                <li>Zhang, Y., & Clark, S. (2008). A Tale of Two Parsers: Investigating and Combining Graph-based and Transition-based Dependency Parsing.</li>
+                <li>Kong, L., Schneider, N., Swayamdipta, S., Bhatia, A., Dyer, C., & Smith, N. A. (2014). A Dependency Parser for Tweets.</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
