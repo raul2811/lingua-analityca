@@ -53,11 +53,12 @@ pub async fn analizar(form: web::Form<AnalisisForm>, tmpl: web::Data<Tera>) -> i
     let texto = form.texto.trim();
 
     if texto.is_empty() {
-        return HttpResponse::BadRequest()
+        return HttpResponse::Ok()
             .content_type("text/html")
             .body(r#"
-                <div style="padding:16px;border:1px solid #991b1b;background:#450a0a;color:#fecaca;">
-                    Error: la entrada de texto no puede estar vacía.
+                <div class="dashboard-card p-5 border-red-500/25">
+                    <p class="text-sm font-semibold text-red-400">Análisis no ejecutado</p>
+                    <p class="text-xs text-brand-muted mt-1">La entrada de texto no puede estar vacía.</p>
                 </div>
             "#);
     }
