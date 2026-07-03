@@ -6,6 +6,12 @@ pub struct AnalisisForm {
     pub tipo: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BatchAnalisisRequest {
+    pub texto: String,
+    pub tipo: String,
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct TokenInfo {
     pub token: String,
@@ -201,4 +207,35 @@ pub struct AnalisisResultado {
     pub razones_revision: Vec<String>,
     pub limitaciones: Vec<String>,
     pub reporte_markdown: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct BatchChunkResultado {
+    pub indice: usize,
+    pub palabras: usize,
+    pub texto_preview: String,
+    pub stanford_estado: String,
+    pub linguakit_estado: String,
+    pub stanford_dependencias: Vec<Dependencia>,
+    pub linguakit_dependencias: Vec<Dependencia>,
+    pub stanford_tokens: usize,
+    pub linguakit_tokens: usize,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct BatchAnalisisResultado {
+    pub ok: bool,
+    pub tipo: String,
+    pub total_palabras: usize,
+    pub total_chunks: usize,
+    pub chunk_size: usize,
+    pub chunks: Vec<BatchChunkResultado>,
+    pub stanford_dependencias_total: usize,
+    pub linguakit_dependencias_total: usize,
+    pub grafo_stanford: GrafoDependencia,
+    pub grafo_linguakit: GrafoDependencia,
+    pub export_json: serde_json::Value,
+    pub export_dot_stanford: String,
+    pub export_dot_linguakit: String,
+    pub nota: String,
 }

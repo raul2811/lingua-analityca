@@ -3,7 +3,7 @@
 <!-- ╚══════════════════════════════════════════╝ -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
     <!-- Stanford CoreNLP -->
-    <div class="dashboard-card p-4 flex items-center justify-between border-brand-border/40 hover:scale-[1.01] transition-all duration-200">
+    <div class="dashboard-card p-4 flex items-center justify-between border-brand-border/40">
         <div class="space-y-1">
             <span class="text-xs text-brand-muted font-semibold uppercase tracking-wider block">Stanford CoreNLP</span>
             <div class="flex items-center gap-1.5 mt-0.5">
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Linguakit -->
-    <div class="dashboard-card p-4 flex items-center justify-between border-brand-border/40 hover:scale-[1.01] transition-all duration-200">
+    <div class="dashboard-card p-4 flex items-center justify-between border-brand-border/40">
         <div class="space-y-1">
             <span class="text-xs text-brand-muted font-semibold uppercase tracking-wider block">Linguakit</span>
             <div class="flex items-center gap-1.5 mt-0.5">
@@ -110,28 +110,42 @@
 
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- Stanford Tree Container -->
-                <div class="space-y-3 relative">
-                    <div class="flex items-center justify-between gap-3">
-                        <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Grafo Stanford CoreNLP</span>
-                        <span class="text-[10px] text-brand-muted">Interactivo (Arrastra / Zoom)</span>
+                <div id="graph-panel-stanford" class="graph-panel space-y-3 relative">
+                    <div class="graph-header">
+                        <div>
+                            <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider block">Grafo Stanford CoreNLP</span>
+                            <span class="text-[10px] text-brand-muted">Arrastra nodos, usa zoom o amplía el panel.</span>
+                        </div>
+                        <div class="graph-toolbar" aria-label="Controles del grafo Stanford">
+                            <button type="button" class="graph-control" data-graph-id="stanford" data-graph-action="fit">Ajustar</button>
+                            <button type="button" class="graph-control" data-graph-id="stanford" data-graph-action="layout">Ordenar</button>
+                            <button type="button" class="graph-control" data-graph-id="stanford" data-graph-action="expand">Ampliar</button>
+                        </div>
                     </div>
                     <div
                         id="cy-stanford"
-                        class="w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
+                        class="graph-stage w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
                     </div>
                     <textarea id="cy-stanford-nodos-json" class="hidden" hidden>{{ r.grafo_stanford.nodos | json_encode | safe }}</textarea>
                     <textarea id="cy-stanford-aristas-json" class="hidden" hidden>{{ r.grafo_stanford.aristas | json_encode | safe }}</textarea>
                 </div>
 
                 <!-- Linguakit Tree Container -->
-                <div class="space-y-3 relative">
-                    <div class="flex items-center justify-between gap-3">
-                        <span class="text-xs font-semibold text-purple-400 uppercase tracking-wider">Grafo Linguakit</span>
-                        <span class="text-[10px] text-brand-muted">Interactivo (Arrastra / Zoom)</span>
+                <div id="graph-panel-linguakit" class="graph-panel space-y-3 relative">
+                    <div class="graph-header">
+                        <div>
+                            <span class="text-xs font-semibold text-purple-400 uppercase tracking-wider block">Grafo Linguakit</span>
+                            <span class="text-[10px] text-brand-muted">Arrastra nodos, usa zoom o amplía el panel.</span>
+                        </div>
+                        <div class="graph-toolbar" aria-label="Controles del grafo Linguakit">
+                            <button type="button" class="graph-control" data-graph-id="linguakit" data-graph-action="fit">Ajustar</button>
+                            <button type="button" class="graph-control" data-graph-id="linguakit" data-graph-action="layout">Ordenar</button>
+                            <button type="button" class="graph-control" data-graph-id="linguakit" data-graph-action="expand">Ampliar</button>
+                        </div>
                     </div>
                     <div
                         id="cy-linguakit"
-                        class="w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
+                        class="graph-stage w-full h-80 min-h-[320px] bg-brand-deep/70 rounded-xl border border-brand-border/30 overflow-hidden relative">
                     </div>
                     <textarea id="cy-linguakit-nodos-json" class="hidden" hidden>{{ r.grafo_linguakit.nodos | json_encode | safe }}</textarea>
                     <textarea id="cy-linguakit-aristas-json" class="hidden" hidden>{{ r.grafo_linguakit.aristas | json_encode | safe }}</textarea>
@@ -418,6 +432,7 @@
         const tooltip = document.getElementById('cy-tooltip');
         const cyStanfordEl = document.getElementById('cy-stanford');
         const cyLinguakitEl = document.getElementById('cy-linguakit');
+        const graphRegistry = {};
 
         // Si Cytoscape no está cargado en el layout principal, mostramos un aviso claro.
         if (typeof window.cytoscape !== 'function') {
@@ -443,53 +458,11 @@
         const linguakitNodes = buildNodes(linguakitNodesRaw, 'lk');
         const linguakitEdges = buildEdges(linguakitEdgesRaw, linguakitNodes, 'lk');
 
-        console.log('Stanford nodes:', stanfordNodes);
-        console.log('Stanford edges:', stanfordEdges);
-        console.log('Linguakit nodes:', linguakitNodes);
-        console.log('Linguakit edges:', linguakitEdges);
-        console.log('Cytoscape cargado:', typeof window.cytoscape);
-
         const cytoscapeFn = window.cytoscape;
 
-        // --- INICIALIZAR CYTOSCAPE STANFORD ---
-        if (cyStanfordEl) {
-            if (stanfordNodes.length === 0) {
-                showGraphMessage(cyStanfordEl, 'No hay nodos de Stanford para graficar.');
-            } else {
-                const cyStanford = cytoscapeFn({
-                    container: cyStanfordEl,
-                    elements: [...stanfordNodes, ...stanfordEdges],
-                    style: getStyle('#10b981', '#34d399'),
-                    layout: { name: 'preset', fit: true, padding: 30 },
-                    userZoomingEnabled: true,
-                    userPanningEnabled: true,
-                    boxSelectionEnabled: false
-                });
-
-                setupTooltip(cyStanford);
-                refreshGraph(cyStanford);
-            }
-        }
-
-        // --- INICIALIZAR CYTOSCAPE LINGUAKIT ---
-        if (cyLinguakitEl) {
-            if (linguakitNodes.length === 0) {
-                showGraphMessage(cyLinguakitEl, 'No hay nodos de Linguakit para graficar.');
-            } else {
-                const cyLinguakit = cytoscapeFn({
-                    container: cyLinguakitEl,
-                    elements: [...linguakitNodes, ...linguakitEdges],
-                    style: getStyle('#c084fc', '#d8b4fe'),
-                    layout: { name: 'preset', fit: true, padding: 30 },
-                    userZoomingEnabled: true,
-                    userPanningEnabled: true,
-                    boxSelectionEnabled: false
-                });
-
-                setupTooltip(cyLinguakit);
-                refreshGraph(cyLinguakit);
-            }
-        }
+        initGraph('stanford', cyStanfordEl, stanfordNodes, stanfordEdges, '#10b981', '#34d399');
+        initGraph('linguakit', cyLinguakitEl, linguakitNodes, linguakitEdges, '#c084fc', '#d8b4fe');
+        setupGraphControls();
 
         animateGauge();
 
@@ -583,6 +556,128 @@
                 }));
         }
 
+        function initGraph(id, container, nodes, edges, accentColor, hoverAccent) {
+            if (!container) {
+                return;
+            }
+
+            if (nodes.length === 0) {
+                showGraphMessage(container, `No hay nodos de ${id} para graficar.`);
+                return;
+            }
+
+            const cy = cytoscapeFn({
+                container,
+                elements: [...nodes, ...edges],
+                style: getStyle(accentColor, hoverAccent),
+                layout: getGraphLayout(edges.length > 0),
+                userZoomingEnabled: true,
+                userPanningEnabled: true,
+                boxSelectionEnabled: false,
+                minZoom: 0.25,
+                maxZoom: 2.4
+            });
+
+            graphRegistry[id] = cy;
+            setupTooltip(cy);
+            refreshGraph(cy);
+        }
+
+        function getGraphLayout(hasEdges) {
+            if (!hasEdges) {
+                return { name: 'grid', fit: true, padding: 36, animate: true, animationDuration: 240 };
+            }
+
+            return {
+                name: 'breadthfirst',
+                directed: true,
+                fit: true,
+                padding: 42,
+                spacingFactor: 1.18,
+                circle: false,
+                avoidOverlap: true,
+                animate: true,
+                animationDuration: 260
+            };
+        }
+
+        function runGraphLayout(cy) {
+            if (!cy) {
+                return;
+            }
+
+            cy.layout(getGraphLayout(cy.edges().length > 0)).run();
+            setTimeout(() => fitGraph(cy), 280);
+        }
+
+        function fitGraph(cy) {
+            if (!cy) {
+                return;
+            }
+
+            cy.resize();
+            cy.fit(undefined, 34);
+            cy.center();
+        }
+
+        function setupGraphControls() {
+            document.querySelectorAll('[data-graph-action]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const id = button.dataset.graphId;
+                    const action = button.dataset.graphAction;
+                    const cy = graphRegistry[id];
+
+                    if (action === 'fit') {
+                        fitGraph(cy);
+                    } else if (action === 'layout') {
+                        runGraphLayout(cy);
+                    } else if (action === 'expand') {
+                        toggleGraphExpanded(id, button);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeExpandedGraph();
+                }
+            });
+        }
+
+        function toggleGraphExpanded(id, button) {
+            const panel = document.getElementById(`graph-panel-${id}`);
+            const cy = graphRegistry[id];
+            if (!panel || !cy) {
+                return;
+            }
+
+            const shouldExpand = !panel.classList.contains('is-expanded');
+            closeExpandedGraph();
+
+            if (shouldExpand) {
+                panel.classList.add('is-expanded');
+                document.body.classList.add('graph-expanded');
+                button.textContent = 'Cerrar';
+                button.setAttribute('aria-expanded', 'true');
+            }
+
+            setTimeout(() => fitGraph(cy), 180);
+        }
+
+        function closeExpandedGraph() {
+            document.querySelectorAll('.graph-panel.is-expanded').forEach(panel => {
+                panel.classList.remove('is-expanded');
+                const id = panel.id.replace('graph-panel-', '');
+                const button = panel.querySelector('[data-graph-action="expand"]');
+                if (button) {
+                    button.textContent = 'Ampliar';
+                    button.setAttribute('aria-expanded', 'false');
+                }
+                setTimeout(() => fitGraph(graphRegistry[id]), 180);
+            });
+            document.body.classList.remove('graph-expanded');
+        }
+
         // Estilos comunes para Cytoscape
         function getStyle(accentColor, hoverAccent) {
             return [
@@ -609,7 +704,7 @@
                     }
                 },
                 {
-                    selector: 'node:hover',
+                    selector: 'node.hover',
                     style: {
                         'border-color': hoverAccent,
                         'border-width': '2.5px',
@@ -639,7 +734,7 @@
                     }
                 },
                 {
-                    selector: 'edge:hover',
+                    selector: 'edge.hover',
                     style: {
                         'width': 3,
                         'line-color': hoverAccent,
@@ -657,6 +752,7 @@
 
             cy.on('mouseover', 'node, edge', function(evt) {
                 const target = evt.target;
+                target.addClass('hover');
                 tooltip.innerHTML = target.data('tooltip') || '';
                 tooltip.classList.remove('hidden');
 
@@ -671,7 +767,8 @@
                 }
             });
 
-            cy.on('mouseout', 'node, edge', function() {
+            cy.on('mouseout', 'node, edge', function(evt) {
+                evt.target.removeClass('hover');
                 tooltip.classList.add('hidden');
             });
         }
@@ -687,20 +784,15 @@
 
         function refreshGraph(cy) {
             cy.ready(() => {
-                cy.resize();
-                cy.fit(undefined, 30);
-                cy.center();
+                fitGraph(cy);
             });
 
             setTimeout(() => {
-                cy.resize();
-                cy.fit(undefined, 30);
-                cy.center();
+                fitGraph(cy);
             }, 150);
 
             window.addEventListener('resize', () => {
-                cy.resize();
-                cy.fit(undefined, 30);
+                fitGraph(cy);
             });
         }
 

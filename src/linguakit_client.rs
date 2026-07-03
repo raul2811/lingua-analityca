@@ -3,9 +3,11 @@ use reqwest::Client;
 use serde_json::Value;
 use std::env;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::fs;
 use tokio::process::Command;
+
+const LINGUAKIT_HTTP_TIMEOUT_SECS: u64 = 20;
 
 pub async fn analizar_linguakit_local(texto: &str) -> LinguakitResult {
     if let Some(result) = analizar_linguakit_http(texto).await {
@@ -25,7 +27,10 @@ async fn analizar_linguakit_http(texto: &str) -> Option<LinguakitResult> {
         normalizar_output_api(&env::var("LINGUAKIT_OUTPUT").unwrap_or_else(|_| "-a".to_string()));
 
     let url = format!("{}/v2.0/{}", base_url.trim_end_matches('/'), mode);
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(LINGUAKIT_HTTP_TIMEOUT_SECS))
+        .build()
+        .ok()?;
     let mut body = serde_json::json!({
         "text": texto
     });
@@ -40,7 +45,7 @@ async fn analizar_linguakit_http(texto: &str) -> Option<LinguakitResult> {
 
     if status != 200 {
         return Some(LinguakitResult {
-            estado: format!("ERROR LINGUAKIT API {}", status),
+            estado: format!("ERROR LINGUAKIT API {status}"),
             tokens: vec![],
             dependencias: vec![],
             raw_json: serde_json::json!({
@@ -282,12 +287,12 @@ fn normalizar_nodo_dependencia(valor: &str) -> String {
     if categoria.is_empty() {
         lema.to_string()
     } else {
-        format!("{}_{}", lema, categoria)
+        format!("{lema}_{categoria}")
     }
 }
 
 fn extraer_atributo(features: &str, clave: &str) -> Option<String> {
-    let prefijo = format!("{}:", clave);
+    let prefijo = format!("{clave}:");
 
     for item in features.split('|') {
         if let Some(valor) = item.strip_prefix(&prefijo) {

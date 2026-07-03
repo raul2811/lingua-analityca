@@ -44,7 +44,7 @@ La plataforma cuenta con un diseño premium y responsivo al estilo Apple (tanto 
 
 El sistema recibe una oración desde una interfaz web, ejecuta el análisis sintáctico en ambos motores, normaliza las estructuras de datos devueltas y genera de forma dinámica una **matriz de decisión automática** que determina cuál herramienta es óptima según las restricciones de los datos de entrada.
 
-La ejecucion normal del sistema es **offline/local**: una vez construidas o descargadas las imagenes de contenedor, la aplicacion no depende de RapidAPI ni de servicios NLP externos en tiempo de ejecucion. La comunicacion ocurre solamente entre el navegador, el backend Rust y los servicios locales de Stanford CoreNLP y Linguakit.
+La ejecucion normal del sistema es **offline/local**: una vez construidas o descargadas las imagenes de contenedor, la aplicacion no depende de RapidAPI, CDNs ni servicios NLP externos en tiempo de ejecucion. La comunicacion ocurre solamente entre el navegador, el backend Rust y los servicios locales de Stanford CoreNLP y Linguakit. El frontend carga el CSS compilado y las bibliotecas HTMX/Cytoscape desde `static/`.
 
 > **Eje Temático de Investigación:** *Herramientas de Análisis Sintáctico NLP: creación de una matriz de decisión técnica justificando el uso de Stanford Parser o Linguakit según la naturaleza de los datos.*
 
@@ -165,7 +165,7 @@ El proyecto está organizado como un orquestador web en **Rust + Actix Web** y d
 | Componente | Archivo / servicio | Responsabilidad |
 | :--- | :--- | :--- |
 | Entrada web | `templates/index.html` | Formulario HTMX para capturar texto y tipo de análisis. |
-| Rutas HTTP | `src/routes.rs` | Expone `/`, `/analizar`, `/api/analizar`, `/api/stanford/local` y `/api/linguakit/local`. |
+| Rutas HTTP | `src/routes/` | Separa handlers, orquestacion de analisis, grafos, gold cases, tokens y reportes. Expone `/`, `/analizar`, `/api/analizar`, `/api/stanford/local` y `/api/linguakit/local`. |
 | Orquestador | `src/main.rs` | Inicializa Actix Web, carga variables `.env` y registra plantillas Tera. |
 | Cliente Stanford | `src/stanford_client.rs` | Envía texto a Stanford CoreNLP y extrae tokens, lemas, POS y dependencias. |
 | Cliente Linguakit | `src/linguakit_client.rs` | Consulta la API local de Linguakit; si no está disponible, intenta un binario local como fallback. |

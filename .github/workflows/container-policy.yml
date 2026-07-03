@@ -1,0 +1,23 @@
+name: Container Policy
+
+on:
+  pull_request:
+    paths:
+      - "containers/**"
+      - "compose*.yaml"
+      - ".dockerignore"
+      - ".github/workflows/container-policy.yml"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  policy:
+    uses: raul2811/github-workflows/.github/workflows/container-policy.yml@v1
+    with:
+      compose-file: "compose.prod.yaml"
+      dockerignore-required: true

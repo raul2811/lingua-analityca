@@ -13,6 +13,12 @@ services:
     depends_on:
       - stanford
       - linguakit
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/lingua-analytica", "--healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
@@ -20,6 +26,14 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
     restart: unless-stopped
 
   stanford:
@@ -32,6 +46,16 @@ services:
       - "9000"
     ports:
       - "${STANFORD_PORT:-19000}:9000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q --spider 'http://127.0.0.1:9000/?properties=%7B%22annotators%22%3A%22tokenize%2Cssplit%22%2C%22outputFormat%22%3A%22json%22%7D' --post-data='hola'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=128m
@@ -39,6 +63,14 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 5G
+        reservations:
+          cpus: "0.50"
+          memory: 1G
     restart: unless-stopped
 
   linguakit:
@@ -50,6 +82,16 @@ services:
       - "3002"
     ports:
       - "${LINGUAKIT_PORT_HOST:-3002}:3002"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "perl -MLWP::UserAgent -MJSON -e 'my $$ua=LWP::UserAgent->new(timeout=>5); my $$r=$$ua->post(\"http://127.0.0.1:3002/v2.0/dep\", Content_Type=>\"application/json\", Content=>encode_json({text=>\"hola\"})); exit($$r->is_success ? 0 : 1)'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=128m
@@ -57,4 +99,12 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
     restart: unless-stopped

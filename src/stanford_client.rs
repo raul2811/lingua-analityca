@@ -2,7 +2,10 @@ use crate::models::{Dependencia, StanfordResult};
 use reqwest::Client;
 use serde_json::Value;
 use std::env;
+use std::time::Duration;
 use urlencoding::encode;
+
+const STANFORD_HTTP_TIMEOUT_SECS: u64 = 20;
 
 pub async fn analizar_stanford_real(texto: &str) -> StanfordResult {
     let base_url = env::var("STANFORD_URL").unwrap_or_else(|_| "http://localhost:9000".to_string());
@@ -18,7 +21,23 @@ pub async fn analizar_stanford_real(texto: &str) -> StanfordResult {
         encode(&properties.to_string())
     );
 
-    let client = Client::new();
+    let client = match Client::builder()
+        .timeout(Duration::from_secs(STANFORD_HTTP_TIMEOUT_SECS))
+        .build()
+    {
+        Ok(client) => client,
+        Err(_) => {
+            return StanfordResult {
+                estado: "ERROR STANFORD CLIENT".to_string(),
+                tokens_pos: vec![],
+                dependencias: vec![],
+                raw_json: serde_json::json!({
+                    "ok": false,
+                    "error": "No se pudo inicializar el cliente HTTP de Stanford."
+                }),
+            };
+        }
+    };
 
     let response = client.post(&url).body(texto.to_string()).send().await;
 
@@ -39,7 +58,7 @@ pub async fn analizar_stanford_real(texto: &str) -> StanfordResult {
 
     if status != 200 {
         return StanfordResult {
-            estado: format!("ERROR STANFORD {}", status),
+            estado: format!("ERROR STANFORD {status}"),
             tokens_pos: vec![],
             dependencias: vec![],
             raw_json: serde_json::json!({
@@ -92,7 +111,7 @@ fn extraer_tokens_stanford(json: &Value) -> Vec<String> {
             let pos = token.get("pos").and_then(|v| v.as_str()).unwrap_or("");
 
             if !word.is_empty() {
-                tokens_pos.push(format!("{}_{}_{}", word, lemma, pos));
+                tokens_pos.push(format!("{word}_{lemma}_{pos}"));
             }
         }
     }
