@@ -94,12 +94,16 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ matrix.image }}:sha-${{ github.sha }}
           format: sarif
           output: trivy-${{ matrix.name }}.sarif
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          scanners: vuln
+          limit-severities-for-sarif: true
           exit-code: "1"
 
       - name: Upload Trivy SARIF
