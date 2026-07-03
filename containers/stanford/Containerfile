@@ -4,7 +4,8 @@ ARG CORENLP_VERSION=4.5.10
 
 WORKDIR /tmp
 
-RUN apk add --no-cache curl unzip \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache curl unzip \
     && curl -fSL -o "stanford-corenlp-${CORENLP_VERSION}.zip" "https://nlp.stanford.edu/software/stanford-corenlp-${CORENLP_VERSION}.zip" \
     && unzip -q "stanford-corenlp-${CORENLP_VERSION}.zip" \
     && cd "stanford-corenlp-${CORENLP_VERSION}" \
@@ -21,7 +22,8 @@ LABEL org.opencontainers.image.title="Stanford CoreNLP Spanish Server" \
       org.opencontainers.image.source="https://github.com/${REPOSITORY}" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 
-RUN addgroup -S -g 10001 corenlp \
+RUN apk upgrade --no-cache \
+    && addgroup -S -g 10001 corenlp \
     && adduser -S -D -H -u 10001 -G corenlp corenlp
 
 WORKDIR /opt/corenlp
