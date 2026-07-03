@@ -3,6 +3,7 @@ FROM docker.io/library/perl:5.40-slim AS deps
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
+    && apt-get -y upgrade \
     && apt-get install -y --no-install-recommends ca-certificates cpanminus gcc git libc6-dev make \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,7 +50,11 @@ LABEL org.opencontainers.image.title="Linguakit API" \
       org.opencontainers.image.source="https://github.com/${REPOSITORY}" \
       org.opencontainers.image.licenses="GPL-3.0-or-later"
 
-RUN groupadd --system --gid 10001 linguakit \
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 linguakit \
     && useradd --system --uid 10001 --gid 10001 --home-dir /nonexistent --shell /usr/sbin/nologin linguakit
 
 COPY --from=deps /opt/perl-local /opt/perl-local
